@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Menu, X, LogIn } from 'lucide-react';
+import { Heart, Menu, X, LogIn, Crown } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,12 +51,7 @@ const Navbar = () => {
               >
                 Home
               </button>
-              <button 
-                onClick={() => scrollToSection('services')} 
-                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
-              >
-                Find a doctor
-              </button>
+             
               <button 
                 onClick={() => scrollToSection('services')} 
                 className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
@@ -84,12 +79,20 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
+          
             <Link 
               to="/login"
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-blue-600 bg-white hover:bg-gray-50 transition-colors duration-200"
             >
               <LogIn className="mr-2 h-4 w-4" />
               Sign in
+            </Link>
+            <Link 
+              to="/premium"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 transition-colors duration-200"
+            >
+              <Crown className="mr-2 h-4 w-4" />
+              Upgrade to Premium
             </Link>
             <Link 
               to="/book-appointment"
@@ -149,6 +152,12 @@ const Navbar = () => {
             >
               Contact
             </button>
+            <Link 
+              to="/premium"
+              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-amber-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-800"
+            >
+              Upgrade to Premium
+            </Link>
             <Link 
               to="/login"
               className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"

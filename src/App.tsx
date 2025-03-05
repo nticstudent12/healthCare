@@ -5,6 +5,7 @@ import 'aos/dist/aos.css';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import BookingPage from './pages/BookingPage';
+import PremiumPage from './pages/PremiumPage';
 
 function App() {
   const location = useLocation();
@@ -28,6 +29,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/book-appointment" element={<BookingPage />} />
+        <Route path="/premium" element={<PremiumPage />} />
       </Routes>
     </div>
   );

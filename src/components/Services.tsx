@@ -9,7 +9,7 @@ const Services = () => {
           <div className="lg:col-span-5" data-aos="fade-right">
             <img
               className="rounded-lg shadow-lg object-cover w-full"
-              src="https://images.unsplash.com/photo-1631815588090-d1bcbe9a8545?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80"
+              src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2060&q=80"
               alt="Medical professional with stethoscope"
             />
           </div>
