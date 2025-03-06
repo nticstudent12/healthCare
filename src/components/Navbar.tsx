@@ -152,12 +152,7 @@ const Navbar = () => {
             >
               Contact
             </button>
-            <Link 
-              to="/premium"
-              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-amber-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-800"
-            >
-              Upgrade to Premium
-            </Link>
+           
             <Link 
               to="/login"
               className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
@@ -165,6 +160,13 @@ const Navbar = () => {
               Sign in
             </Link>
             <div className="mt-4 pl-3 pr-4">
+            <Link 
+              to="/premium"
+              className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium  text-amber-700 bg-amber-100 hover:bg-amber-200 transition-colors duration-200 mb-4"
+            >
+              <Crown className="mr-2 h-4 w-4" />
+              Upgrade to Premium
+            </Link>
               <Link 
                 to="/book-appointment"
                 className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
