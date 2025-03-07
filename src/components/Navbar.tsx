@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Heart, Menu, X, LogIn, Crown } from 'lucide-react';
+import { Link , useNavigate } from 'react-router-dom';
+import { Heart, Menu, X, LogIn, Crown, User } from 'lucide-react';
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -20,6 +21,11 @@ const Navbar = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+
+  const handleAvatarClick = () => {
+    navigate('/dashboard');
+  };
 
   const scrollToSection = (sectionId: string) => {
     const section = document.getElementById(sectionId);
@@ -99,7 +105,14 @@ const Navbar = () => {
               className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
               Book Appointment
-            </Link>
+            </Link><div className="relative">
+              <button
+                onClick={handleAvatarClick}
+                className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors duration-200 focus:outline-none "
+              >
+                <User className="h-6 w-6 text-blue-600" />
+              </button>
+            </div>
           </div>
           <div className="-mr-2 flex items-center md:hidden">
             <button
@@ -153,6 +166,12 @@ const Navbar = () => {
               Contact
             </button>
            
+            <Link 
+              to="/dashboard"
+              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-800"
+            >
+              Dashboard
+            </Link>
             <Link 
               to="/login"
               className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"

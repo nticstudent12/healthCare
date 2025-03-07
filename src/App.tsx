@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import BookingPage from './pages/BookingPage';
 import PremiumPage from './pages/PremiumPage';
+import DashboardPage from './pages/DashbordPage';
 
 function App() {
   const location = useLocation();
@@ -30,6 +31,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/book-appointment" element={<BookingPage />} />
         <Route path="/premium" element={<PremiumPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </div>
   );
