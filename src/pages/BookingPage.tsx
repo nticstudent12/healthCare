@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import {
-  Heart,
   Clock,
-  Calendar as CalendarIcon,
   Check,
   Info
 } from 'lucide-react';
@@ -16,7 +14,7 @@ type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const timeSlots = [
-  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', 
   '11:00 AM', '11:30 AM', '01:00 PM', '01:30 PM',
   '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
   '04:00 PM', '04:30 PM'
@@ -56,21 +54,21 @@ const BookingPage = () => {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     });
   };
 
   if (bookingComplete) {
     const selectedAppointmentTypeData = appointmentTypes.find(t => t.id === selectedAppointmentType);
-
+    
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-
+        
         <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden" data-aos="fade-up">
             <div className="bg-blue-600 px-6 py-8 text-white">
@@ -82,7 +80,7 @@ const BookingPage = () => {
               <h1 className="text-3xl font-bold text-center">Appointment Confirmed!</h1>
               <p className="text-center text-blue-100 mt-2">Your appointment has been successfully scheduled</p>
             </div>
-
+            
             <div className="p-6 md:p-8">
               <div className="border-b border-gray-200 pb-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Appointment Details</h2>
@@ -107,22 +105,22 @@ const BookingPage = () => {
                   </div>
                 </div>
               </div>
-
+              
               <div className="mb-6">
                 <div className="bg-blue-50 rounded-lg p-4 flex items-start">
                   <Info className="h-5 w-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
                   <div>
                     <h3 className="text-sm font-medium text-blue-800">Important Information</h3>
                     <p className="mt-1 text-sm text-blue-700">
-                      Please arrive 15 minutes before your appointment time. If you need to cancel or reschedule,
+                      Please arrive 15 minutes before your appointment time. If you need to cancel or reschedule, 
                       please do so at least 24 hours in advance.
                     </p>
                   </div>
                 </div>
               </div>
-
+              
               <div className="flex justify-center">
-                <Link
+                <Link 
                   to="/"
                   className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
                 >
@@ -132,7 +130,7 @@ const BookingPage = () => {
             </div>
           </div>
         </div>
-
+        
         <Footer />
       </div>
     );
@@ -141,7 +139,7 @@ const BookingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-
+      
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12" data-aos="fade-up">
           <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
@@ -151,7 +149,7 @@ const BookingPage = () => {
             Choose your preferred date, time, and appointment type.
           </p>
         </div>
-
+        
         <div className="max-w-4xl mx-auto">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden" data-aos="fade-up">
             <div className="p-6 md:p-8">
@@ -159,15 +157,15 @@ const BookingPage = () => {
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Select Date</h3>
                   <div className="calendar-container">
-                    <Calendar
-                      onChange={handleDateChange}
-                      value={date}
+                    <Calendar 
+                      onChange={handleDateChange} 
+                      value={date} 
                       minDate={new Date()}
                       className="rounded-lg border shadow-sm"
                     />
                   </div>
                 </div>
-
+                
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Select Time</h3>
                   {date ? (
@@ -176,10 +174,11 @@ const BookingPage = () => {
                         <div
                           key={timeSlot}
                           onClick={() => handleTimeSlotSelect(timeSlot)}
-                          className={`px-4 py-3 border rounded-md cursor-pointer text-center transition-all duration-200 ${selectedTimeSlot === timeSlot
+                          className={`px-4 py-3 border rounded-md cursor-pointer text-center transition-all duration-200 ${
+                            selectedTimeSlot === timeSlot
                               ? 'bg-blue-600 text-white border-blue-600'
                               : 'border-gray-300 hover:border-blue-300'
-                            }`}
+                          }`}
                         >
                           <div className="flex items-center justify-center">
                             <Clock className={`h-4 w-4 mr-2 ${selectedTimeSlot === timeSlot ? 'text-white' : 'text-gray-400'}`} />
@@ -195,7 +194,7 @@ const BookingPage = () => {
                   )}
                 </div>
               </div>
-
+              
               <div className="mt-8">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Appointment Type</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -203,10 +202,11 @@ const BookingPage = () => {
                     <div
                       key={type.id}
                       onClick={() => handleAppointmentTypeSelect(type.id)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${selectedAppointmentType === type.id
+                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                        selectedAppointmentType === type.id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-blue-300'
-                        }`}
+                      }`}
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -221,15 +221,16 @@ const BookingPage = () => {
                   ))}
                 </div>
               </div>
-
+              
               <div className="mt-8 flex justify-center">
                 <button
                   onClick={handleSubmit}
                   disabled={!date || !selectedTimeSlot || !selectedAppointmentType}
-                  className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${date && selectedTimeSlot && selectedAppointmentType
+                  className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
+                    date && selectedTimeSlot && selectedAppointmentType
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-gray-300 cursor-not-allowed'
-                    }`}
+                  }`}
                 >
                   Confirm Booking
                   <Check className="ml-2 h-5 w-5" />
@@ -239,7 +240,7 @@ const BookingPage = () => {
           </div>
         </div>
       </div>
-
+      
       <Footer />
     </div>
   );

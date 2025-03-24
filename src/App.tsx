@@ -8,6 +8,7 @@ import BookingPage from './pages/BookingPage';
 import PremiumPage from './pages/PremiumPage';
 import DashboardPage from './pages/DashbordPage';
 import AdminDashboard from './pages/AdminDashboard';
+import SignUpPage from './pages/SignUpPage';
 
 function App() {
   const location = useLocation();
@@ -34,6 +35,7 @@ function App() {
         <Route path="/premium" element={<PremiumPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
       </Routes>
     </div>
   );
