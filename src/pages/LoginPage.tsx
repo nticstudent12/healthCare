@@ -1,17 +1,58 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, User, Lock, Eye, EyeOff, Facebook, Twitter } from 'lucide-react';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempt with:', { username, password, rememberMe });
+    setLoading(true);
+    setError('');
+
+    try {
+      // Send login request to Django backend
+      const response = await axios.post('http://localhost:8000/api/token/', {//not sure about this
+        username,
+        password
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const { access, refresh } = response.data;
+
+      // Store tokens based on remember me choice
+      if (rememberMe) {
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+      } else {
+        sessionStorage.setItem('access_token', access);
+        sessionStorage.setItem('refresh_token', refresh);
+      }
+
+      // Decode token to get user info (optional)
+      const decoded = jwtDecode(access);
+      console.log('Logged in user:', decoded);
+
+      // Redirect to dashboard or home page
+      navigate('/');
+
+    } catch (err) {
+      setError('Invalid username or password');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,6 +74,11 @@ const LoginPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10" data-aos="fade-up">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -116,9 +162,10 @@ const LoginPage = () => {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                disabled={loading}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Sign in
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
           </form>
@@ -164,9 +211,9 @@ const LoginPage = () => {
           <div className="mt-6">
             <p className="text-center text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
                 Sign up
-              </a>
+              </Link>
             </p>
           </div>
         </div>

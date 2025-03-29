@@ -9,6 +9,7 @@ import PremiumPage from './pages/PremiumPage';
 import DashboardPage from './pages/DashbordPage';
 import AdminDashboard from './pages/AdminDashboard';
 import SignUpPage from './pages/SignUpPage';
+import PrivateRoute from './components/PrivateRoute';
 
 function App() {
   const location = useLocation();
@@ -34,8 +35,13 @@ function App() {
         <Route path="/book-appointment" element={<BookingPage />} />
         <Route path="/premium" element={<PremiumPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        
         <Route path="/signup" element={<SignUpPage />} />
+        {/* this private route componet allows only the logged in user to see the dashboard */}
+        <Route path="/dashboard" element={
+          <PrivateRoute>
+            <DashboardPage />
+          </PrivateRoute>} />
       </Routes>
     </div>
   );
