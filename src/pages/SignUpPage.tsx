@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Mail, Lock, Eye, EyeOff, Facebook, Twitter, User, Calendar } from 'lucide-react';
+import axios from 'axios';
 
 const SignUpPage = () => {
-  
   const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
@@ -13,11 +14,10 @@ const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
@@ -28,15 +28,33 @@ const SignUpPage = () => {
       return;
     }
 
-    // Handle signup logic here
-    console.log('Signup attempt with:', { 
-     
+    const userData = {
       username,
-      email, 
+      name,
+      email,
       age,
       gender,
-      termsAccepted 
-    });
+      password,
+    };
+
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/users/create/", userData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      alert("Signup successful! Please check your email to verify your account.");
+      console.log("Response: ", response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Signup error: ", error.response?.data || error.message);
+        alert("Signup failed: " + JSON.stringify(error.response?.data));
+      } else {
+        console.error("Signup error: ", error);
+        alert("An unexpected error occurred.");
+      }
+    }
   };
 
   return (
@@ -75,7 +93,28 @@ const SignUpPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="your username"
+                  placeholder="Your Username"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Name
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Your Full Name"
                 />
               </div>
             </div>
@@ -117,7 +156,7 @@ const SignUpPage = () => {
                     type="number"
                     required
                     min="0"
-                    max="120"
+                    max="200"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -135,13 +174,16 @@ const SignUpPage = () => {
                     name="gender"
                     required
                     value={gender}
-                    onChange={(e) => setGender(e.target.value)}
+                    defaultValue={"m"}
+                    onChange={(e) => {
+                      console.log("Selected Gender:", e.target.value);
+                      setGender(e.target.value);}}
                     className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   >
                     
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    
+                    <option value="m">Male</option>
+                    <option value="f">Female</option>
+                    <option value="o">Other</option>
                   </select>
                 </div>
               </div>

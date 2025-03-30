@@ -20,7 +20,7 @@ const LoginPage = () => {
 
     try {
       // Send login request to Django backend
-      const response = await axios.post('http://localhost:8000/api/token/', {//not sure about this
+      const response = await axios.post('http://127.0.0.1:8000/api/token/', {//not sure about this
         username,
         password
       }, {
