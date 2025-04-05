@@ -1,15 +1,16 @@
 // src/utils/api.ts
 import axios from 'axios';
 
-// 1. Create the basic axios instance with your API base URL
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/', // Your Django backend URL
-  timeout: 5000, // 5 second timeout
+  baseURL: 'http://localhost:8000/api/',
+  timeout: 5000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
-// 2. Simple request interceptor to add auth token if available
+// Add token to requests
 api.interceptors.request.use((config) => {
-  // Try to get token from localStorage first, then sessionStorage
   const token = localStorage.getItem('access_token') || 
                sessionStorage.getItem('access_token');
   
@@ -20,14 +21,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 3. Basic response interceptor for error handling
+// Handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle common errors
     if (error.response?.status === 401) {
       console.error('Unauthorized - please login again');
-      // You can redirect to login here if needed
     }
     return Promise.reject(error);
   }

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, User, Lock, Eye, EyeOff, Facebook, Twitter } from 'lucide-react';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import { Heart, User, Lock, Eye, EyeOff , Twitter, Facebook} from 'lucide-react';
+import authService from '../utils/api/auth';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -19,19 +18,8 @@ const LoginPage = () => {
     setError('');
 
     try {
-      // Send login request to Django backend
-      const response = await axios.post('http://127.0.0.1:8000/api/token/', {//not sure about this
-        username,
-        password
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const { access, refresh } = await authService.login(username, password);
 
-      const { access, refresh } = response.data;
-
-      // Store tokens based on remember me choice
       if (rememberMe) {
         localStorage.setItem('access_token', access);
         localStorage.setItem('refresh_token', refresh);
@@ -40,13 +28,9 @@ const LoginPage = () => {
         sessionStorage.setItem('refresh_token', refresh);
       }
 
-      // Decode token to get user info (optional)
-      const decoded = jwtDecode(access);
+      const decoded = authService.decodeToken(access);
       console.log('Logged in user:', decoded);
-
-      // Redirect to dashboard or home page
       navigate('/');
-
     } catch (err) {
       setError('Invalid username or password');
       console.error('Login error:', err);
@@ -54,7 +38,6 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
