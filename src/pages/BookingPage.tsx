@@ -47,36 +47,30 @@ const BookingPage = () => {
     setError(null);
   
     try {
-      // Format the date as YYYY-MM-DD
-      const formattedDate = date instanceof Date ? date.toISOString().split('T')[0] : '';
-      
-      // Combine date and time
-      const startTime = `${formattedDate}T${selectedTimeSlot}:00`;
-      
-      // Calculate end time (30 minutes later)
+      // Combine date and time into one ISO 8601 datetime string (UTC assumed)
+      const selectedDate = date instanceof Date ? date : new Date(date[0] || new Date());
       const [hours, minutes] = selectedTimeSlot.split(':').map(Number);
-      const endHours = minutes + 30 >= 60 ? hours + 1 : hours;
-      const endMinutes = (minutes + 30) % 60;
-      const endTime = `${formattedDate}T${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
   
+      // Set selected time
+      selectedDate.setHours(hours, minutes, 0, 0);
+  
+      // Convert to ISO string (UTC)
+      const appointment_date = selectedDate.toISOString();  // e.g. "2025-04-10T14:30:00.000Z"
+      console.log("Sending appointment_date:", appointment_date);
+
       const response = await api.post('users/appointments/create', {
-        start_time: startTime,
-        end_time: endTime,
-        status: 'booked',
-        notes: ''
+        appointment_date,
       });
-  
+      console.log("Response from API:", response.data);
       setBookingReference(response.data.id || `APP-${Date.now()}`);
       setBookingComplete(true);
     } catch (err: unknown) {
       console.error('Booking failed:', err);
       setError('Failed to book appointment. Please try again.');
-      
-      // Type guard to check if error is an AxiosError
+  
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const axiosError = err as { response?: { status?: number } };
         if (axiosError.response?.status === 401) {
-          // Redirect to login if unauthorized
           navigate('/login');
         }
       }

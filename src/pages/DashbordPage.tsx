@@ -17,14 +17,15 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../utils/api/api'; // Fixed import path
 
 type Appointment = {
   id: string;
   doctor: string;
   date: string;
   time: string;
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'missed' | 'completed' | 'cancelled' | 'pending' | 'confirmed' | 'upcoming';
   type: string;
 };
 
@@ -46,13 +47,26 @@ type Notification = {
   read: boolean;
 };
 
+type UserData = {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  age: number;
+  gender: string;
+  role: string;
+  premium_status: boolean;
+  ai_tries: number;
+};
+
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support'>('overview');
+  const [username, setUsername] = useState<string>('John Doe');
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
       title: 'Appointment Reminder',
-      message: 'Your appointment with Dr. Sarah Johnson is tomorrow at 10:00 AM',
+      message: 'Your appointment is tomorrow at 10:00 AM',
       time: '1 hour ago',
       type: 'info',
       read: false
@@ -60,21 +74,46 @@ const DashboardPage = () => {
     {
       id: '2',
       title: 'Test Results Available',
-      message: 'Your recent blood test results are now available',
+      message: 'Your test results are now available',
       time: '2 hours ago',
       type: 'success',
       read: false
     },
     {
       id: '3',
-      title: 'Prescription Renewal',
-      message: 'Your prescription needs to be renewed in 5 days',
+      title: 'AI Result',
+      message: 'Your AI Results are in!',
       time: '1 day ago',
-      type: 'warning',
+      type: 'success',
       read: true
     }
   ]);
-
+  
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/users/me/');
+        setUserData(response.data);
+        console.log('User data:', response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setError('Failed to load user data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
+  const name = userData?.name || username; // Fallback to default username if not available
+  const patient_id = userData?.id || '000000'
   const appointments: Appointment[] = [
     {
       id: '1',
@@ -166,6 +205,26 @@ const DashboardPage = () => {
     setNotifications(notifications.map(notification =>
       notification.id === id ? { ...notification, read: true } : notification
     ));
+  };
+
+  // Update user data function
+  const updateUserData = async (updatedData: Partial<UserData>) => {
+    try {
+      setLoading(true);
+      const response = await api.put('/account/', {
+        ...userData,
+        ...updatedData
+      });
+      setUserData(response.data);
+      setError(null);
+      return true;
+    } catch (err) {
+      console.error('Error updating user data:', err);
+      setError('Failed to update user data. Please try again later.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderOverview = () => (
@@ -534,8 +593,8 @@ const DashboardPage = () => {
                   <User className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">John Doe</h2>
-                  <p className="text-sm text-gray-500">Patient ID: #12345</p>
+                  <h2 className="text-lg font-semibold text-gray-900">{name}</h2>
+                  <p className="text-sm text-gray-500">Patient ID: #{patient_id}</p>
                 </div>
               </div>
               
