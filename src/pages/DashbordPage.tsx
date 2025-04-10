@@ -113,7 +113,10 @@ const DashboardPage = () => {
     fetchUserData();
   }, []);
   const name = userData?.name || username; // Fallback to default username if not available
-  const patient_id = userData?.id || '000000'
+  const patient_id = userData?.id || '000000';
+  const patient_appointment = userData?. appointments.length || 0;//
+  const patient_records = userData?.medical_records || 0;///
+
   const appointments: Appointment[] = [
     {
       id: '1',
@@ -269,9 +272,9 @@ const DashboardPage = () => {
               <Calendar className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-500">Dr. Sarah Johnson</p>
-              <p className="text-lg font-medium text-gray-900">General Check-up</p>
-              <p className="text-sm text-gray-500">March 15, 2024 at 10:00 AM</p>
+              
+              <p className="text-lg font-medium text-gray-900">March 15, 2024 at 10:00 AM</p>
+              
             </div>
           </div>
           <Link
@@ -336,15 +339,13 @@ const DashboardPage = () => {
                     <Clock className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm text-gray-500">{appointment.type}</p>
-                    <p className="text-lg font-medium text-gray-900">{appointment.doctor}</p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(appointment.date).toLocaleDateString('en-US', {
+                  
+                    <p className="text-lg font-medium text-gray-900"> {new Date(appointment.date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
-                      })} at {appointment.time}
-                    </p>
+                      })} at {appointment.time}</p>
+                    
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">

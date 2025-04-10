@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Heart, Mail, Lock, Eye, EyeOff, Facebook, Twitter, User, Calendar } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, Mail, Lock, Eye, EyeOff, Facebook, Twitter, User, Calendar, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 
 const SignUpPage = () => {
@@ -14,6 +14,8 @@ const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const navigate = useNavigate();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +45,10 @@ const SignUpPage = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
       alert("Signup successful! Please check your email to verify your account.");
       console.log("Response: ", response.data);
     } catch (error) {
@@ -59,6 +64,16 @@ const SignUpPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-x-hidden">
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-sm mx-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              <p className="text-green-600 font-medium">Signup successful! Redirecting...</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Heart className="h-12 w-12 text-blue-600" />
