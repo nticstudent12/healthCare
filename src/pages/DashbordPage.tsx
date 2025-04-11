@@ -21,12 +21,10 @@ import { useState, useEffect } from 'react';
 import api from '../utils/api/api'; // Fixed import path
 
 type Appointment = {
-  id: string;
-  doctor: string;
-  date: string;
-  time: string;
+  id: number;
+  user: number;
+  appointment_date: string; // ISO 8601 format
   status: 'missed' | 'completed' | 'cancelled' | 'pending' | 'confirmed' | 'upcoming';
-  type: string;
 };
 
 type MedicalRecord = {
@@ -93,6 +91,36 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+
+
+
+
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  // Fetch appointments data when component mounts
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/users/appointments/');
+        setAppointments(response.data);
+        console.log('Appointments data:', response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching appointments:', err);
+        setError('Failed to load appointments. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
+  const appointments_lengh =appointments.length || "no appointments" ;
+  const all_appointments = appointments;
+  const upcoming_appointment = all_appointments[0];
+ 
+
   // Fetch user data when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
@@ -113,36 +141,8 @@ const DashboardPage = () => {
     fetchUserData();
   }, []);
   const name = userData?.name || username; // Fallback to default username if not available
-  const patient_id = userData?.id || '000000';
-  const patient_appointment = userData?. appointments.length || 0;//
-  const patient_records = userData?.medical_records || 0;///
-
-  const appointments: Appointment[] = [
-    {
-      id: '1',
-      doctor: 'Dr. Sarah Johnson',
-      date: '2024-03-15',
-      time: '10:00 AM',
-      status: 'upcoming',
-      type: 'General Check-up'
-    },
-    {
-      id: '2',
-      doctor: 'Dr. Michael Chen',
-      date: '2024-03-20',
-      time: '2:30 PM',
-      status: 'upcoming',
-      type: 'Follow-up'
-    },
-    {
-      id: '3',
-      doctor: 'Dr. Emily Rodriguez',
-      date: '2024-02-28',
-      time: '11:00 AM',
-      status: 'completed',
-      type: 'Consultation'
-    }
-  ];
+  const patient_id = userData?.id || '000000'
+  
 
   const medicalRecords: MedicalRecord[] = [
     {
@@ -178,14 +178,23 @@ const DashboardPage = () => {
     }
   ];
 
+
+  //this function decide what is the color of status
+
   const getStatusColor = (status: Appointment['status']) => {
     switch (status) {
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800';
+      case 'missed':
+        return 'bg-yellow-100 text-yellow-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-orange-800';
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-800';
+      case 'upcoming':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -231,6 +240,7 @@ const DashboardPage = () => {
   };
 
   const renderOverview = () => (
+     
     <div className="space-y-6">
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -239,7 +249,7 @@ const DashboardPage = () => {
             <Calendar className="h-8 w-8 text-blue-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Upcoming Appointments</p>
-              <p className="text-2xl font-semibold text-gray-900">2</p>
+              <p className="text-2xl font-semibold text-gray-900">{appointments_lengh}</p>
             </div>
           </div>
         </div>
@@ -272,9 +282,7 @@ const DashboardPage = () => {
               <Calendar className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              
-              <p className="text-lg font-medium text-gray-900">March 15, 2024 at 10:00 AM</p>
-              
+              <p className="text-base text-black-500">March 15, 2024 at 10:00 AM</p>
             </div>
           </div>
           <Link
@@ -339,20 +347,31 @@ const DashboardPage = () => {
                     <Clock className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="ml-4">
-                  
-                    <p className="text-lg font-medium text-gray-900"> {new Date(appointment.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })} at {appointment.time}</p>
-                    
+
+                    {/* here this section is to make the date and time of the appointment in the right format */}
+                    <div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
                     {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                   </span>
-                  {appointment.status === 'upcoming' && (
+                  {appointment.status === 'pending' && (
                     <button className="text-red-600 hover:text-red-700 text-sm font-medium">
                       Cancel
                     </button>
