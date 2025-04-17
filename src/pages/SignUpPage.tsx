@@ -8,7 +8,7 @@ const SignUpPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
+  const [gender, setGender] = useState('m');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -189,7 +189,6 @@ const SignUpPage = () => {
                     name="gender"
                     required
                     value={gender}
-                    defaultValue={"m"}
                     onChange={(e) => {
                       console.log("Selected Gender:", e.target.value);
                       setGender(e.target.value);}}

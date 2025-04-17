@@ -58,15 +58,16 @@ const BookingPage = () => {
       const appointment_date = selectedDate.toISOString();  // e.g. "2025-04-10T14:30:00.000Z"
       console.log("Sending appointment_date:", appointment_date);
 
-      const response = await api.post('users/appointments/create', {
+      const response = await api.post('users/appointments/create/', {
         appointment_date,
       });
       console.log("Response from API:", response.data);
       setBookingReference(response.data.id || `APP-${Date.now()}`);
       setBookingComplete(true);
-    } catch (err: unknown) {
+        } catch (err) {
       console.error('Booking failed:', err);
-      setError('Failed to book appointment. Please try again.');
+      const errorMessage = (err as any)?.response?.data?.error || "Failed to book appointment. Please try again.";
+      setError(errorMessage);
   
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const axiosError = err as { response?: { status?: number } };
@@ -77,6 +78,7 @@ const BookingPage = () => {
     } finally {
       setIsLoading(false);
     }
+    
   };
 
   const formatDate = (date: Date) => {
