@@ -48,10 +48,12 @@ type Notification = {
 type UserData = {
   id: string;
   username: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   age: number;
   gender: string;
+  phone_number: string;
   role: string;
   premium_status: boolean;
   ai_tries: number;
@@ -140,7 +142,7 @@ const DashboardPage = () => {
     
     fetchUserData();
   }, []);
-  const name = userData?.name || username; // Fallback to default username if not available
+  const name = userData ? `${userData.first_name} ${userData.last_name}` : username; // Fallback to default username if not available
   const patient_id = userData?.id || '000000'
   
 
@@ -236,6 +238,42 @@ const DashboardPage = () => {
       return false;
     } finally {
       setLoading(false);
+    }
+  };
+  const handleSaveChanges = async () => {
+    const firstNameInput = document.querySelector<HTMLInputElement>('input[placeholder="First Name"]');
+    const lastNameInput = document.querySelector<HTMLInputElement>('input[placeholder="Last Name"]');
+    const emailInput = document.querySelector<HTMLInputElement>('input[placeholder="Email"]');
+    const phoneInput = document.querySelector<HTMLInputElement>('input[placeholder="Phone"]');
+
+    const updatedData: Partial<UserData> = {
+      first_name: firstNameInput?.value || userData?.first_name,
+      last_name: lastNameInput?.value || userData?.last_name,
+      email: emailInput?.value || userData?.email,
+      phone_number: phoneInput?.value || userData?.phone_number,
+    };
+    console.log('Updated data:', updatedData);
+    try {
+      setLoading(true);
+      const response = await api.patch('/users/me/', updatedData);
+      setUserData(response.data);
+      console.log('User data updated successfully:', response.data);
+      setError(null);
+      alert('Changes saved successfully!');
+    } catch (err) {
+      console.error('Error saving changes:', err);
+      setError('Failed to save changes. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    // Update state when input changes
+    if (userData) {
+      setUserData({
+        ...userData,
+        [field]: e.target.value, // dynamically update the specific field
+      });
     }
   };
 
@@ -443,6 +481,7 @@ const DashboardPage = () => {
       </div>
     </div>
   );
+  
 
   const renderSettings = () => (
     <div className="bg-white rounded-xl shadow-sm">
@@ -457,7 +496,8 @@ const DashboardPage = () => {
                 <input
                   type="text"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  defaultValue="John"
+                  value={userData?.first_name || ''}
+                  onChange={(e) => handleInputChange(e, 'first_name')} 
                 />
               </div>
               <div>
@@ -465,7 +505,9 @@ const DashboardPage = () => {
                 <input
                   type="text"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  defaultValue="Doe"
+                  value={userData?.last_name || ''}
+                  onChange={(e) => handleInputChange(e, 'last_name')} 
+
                 />
               </div>
               <div>
@@ -473,7 +515,8 @@ const DashboardPage = () => {
                 <input
                   type="email"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  defaultValue="john.doe@example.com"
+                  value={userData?.email || ''}
+                  onChange={(e) => handleInputChange(e, 'email')}
                 />
               </div>
               <div>
@@ -481,7 +524,8 @@ const DashboardPage = () => {
                 <input
                   type="tel"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  defaultValue="+1 (555) 123-4567"
+                  value={userData?.phone_number || ''}
+                  onChange={(e) => handleInputChange(e, 'phone_number')}
                 />
               </div>
             </div>
@@ -532,7 +576,8 @@ const DashboardPage = () => {
           </div>
 
           <div className="flex justify-end">
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveChanges}>
               Save Changes
             </button>
           </div>
@@ -540,7 +585,7 @@ const DashboardPage = () => {
       </div>
     </div>
   );
-
+  
   const renderSupport = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">
