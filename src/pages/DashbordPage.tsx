@@ -48,9 +48,16 @@ type Notification = {
 type UserData = {
   id: string;
   username: string;
+  password: string;
+  profile_picture: string;
   first_name: string;
   last_name: string;
   email: string;
+  settings: {
+    email_notifications: boolean;
+    sms_notifications: boolean;
+    dark_mode: boolean;
+  };
   age: number;
   gender: string;
   phone_number: string;
@@ -60,6 +67,9 @@ type UserData = {
 };
 
 const DashboardPage = () => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support'>('overview');
   const [username, setUsername] = useState<string>('John Doe');
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -90,13 +100,12 @@ const DashboardPage = () => {
   ]);
   
   const [userData, setUserData] = useState<UserData | null>(null);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-
-
-
-
+  const [emailNotifications, setEmailNotifications] = useState(userData?.settings?.email_notifications ?? false);
+  const [smsNotifications, setSmsNotifications] = useState(userData?.settings?.sms_notifications ?? false);
+  const [darkMode, setDarkMode] = useState(userData?.settings?.dark_mode ?? false); 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // Fetch appointments data when component mounts
@@ -221,25 +230,48 @@ const DashboardPage = () => {
     ));
   };
 
-  // Update user data function
-  const updateUserData = async (updatedData: Partial<UserData>) => {
+// Effect to handle initial loading from userData
+useEffect(() => {
+  if (userData?.settings) {
+    setEmailNotifications(userData.settings.email_notifications);
+    setSmsNotifications(userData.settings.sms_notifications);
+  }
+}, [userData]); // Run whenever userData changes
+
+// Handler for toggling email notifications
+const toggleEmailNotifications = () => {
+
+  setEmailNotifications((prev) => !prev);
+  console.log('Email notifications toggled:', !emailNotifications);
+};
+
+// Handler for toggling SMS notifications
+const toggleSmsNotifications = () => {
+  setSmsNotifications((prev) => !prev);
+  console.log('SMS notifications toggled:', !smsNotifications);
+};
+
+  const handlePasswordChange = async () => {
+    const passwordData = {
+      new_password: newPassword,
+      old_password: currentPassword,
+    };
+    console.log('Updated data:', passwordData);
     try {
       setLoading(true);
-      const response = await api.put('/account/', {
-        ...userData,
-        ...updatedData
-      });
-      setUserData(response.data);
+      const response = await api.patch('users/me/password/', passwordData);
+      
+      console.log('User data updated successfully:', response.data);
       setError(null);
-      return true;
+      alert('Changes saved successfully!');
     } catch (err) {
-      console.error('Error updating user data:', err);
-      setError('Failed to update user data. Please try again later.');
-      return false;
+      console.error('Error saving changes:', err);
+      setError('Failed to save changes. Please try again later.');
     } finally {
       setLoading(false);
     }
-  };
+  }
+
   const handleSaveChanges = async () => {
     const firstNameInput = document.querySelector<HTMLInputElement>('input[placeholder="First Name"]');
     const lastNameInput = document.querySelector<HTMLInputElement>('input[placeholder="Last Name"]');
@@ -251,6 +283,11 @@ const DashboardPage = () => {
       last_name: lastNameInput?.value || userData?.last_name,
       email: emailInput?.value || userData?.email,
       phone_number: phoneInput?.value || userData?.phone_number,
+      settings: {
+        dark_mode: darkMode,
+        email_notifications: emailNotifications,
+        sms_notifications: smsNotifications,
+      },
     };
     console.log('Updated data:', updatedData);
     try {
@@ -484,6 +521,7 @@ const DashboardPage = () => {
   
 
   const renderSettings = () => (
+    
     <div className="bg-white rounded-xl shadow-sm">
       <div className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Settings</h3>
@@ -530,7 +568,7 @@ const DashboardPage = () => {
               </div>
             </div>
           </div>
-
+          
           <div>
             <h4 className="text-base font-medium text-gray-900 mb-4">Notification Preferences</h4>
             <div className="space-y-4">
@@ -539,8 +577,17 @@ const DashboardPage = () => {
                   <p className="text-sm font-medium text-gray-900">Email Notifications</p>
                   <p className="text-sm text-gray-500">Receive email updates about your appointments</p>
                 </div>
-                <button className="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-blue-600">
-                  <span className="translate-x-5 inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"></span>
+                <button
+          className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            emailNotifications ? 'bg-blue-600' : 'bg-gray-200'
+          }`}
+          onClick={toggleEmailNotifications}
+        >
+          <span
+            className={`${
+              emailNotifications ? 'translate-x-5' : 'translate-x-0'
+            } inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+          ></span>
                 </button>
               </div>
               <div className="flex items-center justify-between">
@@ -548,11 +595,27 @@ const DashboardPage = () => {
                   <p className="text-sm font-medium text-gray-900">SMS Notifications</p>
                   <p className="text-sm text-gray-500">Receive text messages for appointment reminders</p>
                 </div>
-                <button className="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-gray-200">
-                  <span className="translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"></span>
-                </button>
+                <button
+          className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            smsNotifications ? 'bg-blue-600' : 'bg-gray-200'
+          }`}
+          onClick={toggleSmsNotifications}
+        >
+          <span
+            className={`${
+              smsNotifications ? 'translate-x-5' : 'translate-x-0'
+            } inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+          ></span>
+        </button>
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveChanges}>
+              Save Changes
+            </button>
           </div>
 
           <div>
@@ -563,6 +626,9 @@ const DashboardPage = () => {
                 <input
                   type="password"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Current Password"
+                  value= {currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
                 />
               </div>
               <div>
@@ -570,6 +636,9 @@ const DashboardPage = () => {
                 <input
                   type="password"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                 />
               </div>
             </div>
@@ -577,8 +646,8 @@ const DashboardPage = () => {
 
           <div className="flex justify-end">
             <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-              onClick={handleSaveChanges}>
-              Save Changes
+              onClick={handlePasswordChange}>
+              Change Password
             </button>
           </div>
         </div>
