@@ -1,4 +1,3 @@
-
 import {
   User,
   Settings,
@@ -13,11 +12,49 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { useState } from 'react';
-
+import { useEffect, useState } from 'react';
+import api from '../utils/api/api';
+interface User {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  age: number;
+  gender: string;
+  role: string;
+  premium_status: boolean;
+  ai_tries: number;
+  settings: Record<string, any>; // Use a more specific type if you know the structure
+  pic: string | null;
+}
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState([]); // State to store users
+  const [totalUsers, setTotalUsers] = useState(0); // State for total users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get('/admin/users/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`, // Include token if required
+          },
+        });
+        setUsers(response.data); // Update users state
+        console.log('Fetched users:', response.data); // Log fetched users
+        setTotalUsers(response.data.length);
+        console.log(response.data.length) // Update total users count
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    if (activeTab === 'users' || activeTab === 'overview') {
+      fetchUsers();
+    }
+  }, [activeTab]);
 
   const renderOverview = () => (
     <div className="space-y-6">
@@ -28,7 +65,7 @@ const AdminDashboard = () => {
             <Users className="h-8 w-8 text-blue-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Total Users</p>
-              <p className="text-2xl font-semibold text-gray-900">2,451</p>
+              <p className="text-2xl font-semibold text-gray-900">{totalUsers}</p>
             </div>
           </div>
         </div>
@@ -154,7 +191,7 @@ const AdminDashboard = () => {
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
             <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              Add New Doctor
+              Sync with Database
             </button>
           </div>
         </div>
@@ -239,7 +276,6 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-
   const renderUsers = () => (
     <div className="bg-white rounded-xl shadow-sm">
       <div className="p-6">
@@ -257,7 +293,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
           <table className="min-w-full">
             <thead>
               <tr className="border-b">
@@ -268,7 +304,7 @@ const AdminDashboard = () => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Active
+                  Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -276,62 +312,50 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[
-                {
-                  name: 'John Doe',
-                  email: 'john@example.com',
-                  status: 'Active',
-                  lastActive: '5 minutes ago',
-                  image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3'
-                },
-                {
-                  name: 'Jane Smith',
-                  email: 'jane@example.com',
-                  status: 'Inactive',
-                  lastActive: '2 days ago',
-                  image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3'
-                }
-              ].map((user, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0">
-                        <img
-                          className="h-10 w-10 rounded-full"
-                          src={user.image}
-                          alt={user.name}
-                        />
+              {users
+                .filter((user: User) =>
+                  user.username.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((user: User, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          <User className="h-5 w-5 mt-2 " />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.status === 'Active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.lastActive}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-4">View Details</button>
-                    <button className="text-red-600 hover:text-red-900">Disable</button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.premium_status
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {user.premium_status ? 'Premium' : 'Standard'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.role}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 mr-4">View Details</button>
+                      <button className="text-red-600 hover:text-red-900">Disable</button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   );
+  
 
   const renderReports = () => (
     <div className="space-y-6">
