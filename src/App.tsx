@@ -36,7 +36,7 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         
         <Route path="/signup" element={<SignUpPage />} />
-        {/* this private route componet allows only the logged in user to see the dashboard */}
+       
         <Route path="/dashboard" element={
       
             <DashboardPage />

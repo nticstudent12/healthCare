@@ -6,8 +6,13 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
+  const [loggedin, setLoggedin] = useState(false);
+  const [signtext, setSigntext] = useState('Sign in');
   useEffect(() => {
+    if (sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token')) {
+        setLoggedin(true);
+        setSigntext(loggedin ? 'Log out' : 'Sign in');
+    }
     const handleScroll = () => {
       if (window.scrollY > 10) {
         setScrolled(true);
@@ -20,12 +25,24 @@ const Navbar = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [loggedin]);
 
 
   const handleAvatarClick = () => {
+    const storedUser = sessionStorage.getItem('userData');
+  if (storedUser) {
+    const parsedUser = JSON.parse(storedUser);
+    console.log('User role:', parsedUser.role);
+    console.log('parsedUser : ', parsedUser);
+    
+  if (parsedUser.role === 'admin') {
+    navigate('/admin');
+    }
+  else{
     navigate('/dashboard');
+    };
   };
+};
 
   const scrollToSection = (sectionId: string) => {
     const section = document.getElementById(sectionId);
@@ -35,6 +52,20 @@ const Navbar = () => {
     }
   };
 
+  const handleSignButton = () => {
+    const hasToken = sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token');
+  
+    if (hasToken) {
+      sessionStorage.clear();
+      localStorage.clear();
+      navigate('/');
+      window.location.reload();
+    } else {
+      navigate('/login');
+    }
+  };
+  
+  
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${
       scrolled ? 'bg-white shadow-md' : 'bg-white shadow-sm'
@@ -52,7 +83,7 @@ const Navbar = () => {
             </div>
             <div className="hidden md:ml-6 md:flex md:space-x-8">
               <button 
-                onClick={() => scrollToSection('home')} 
+                onClick={() => navigate('/')} 
                 className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 border-blue-500 transition-colors duration-200"
               >
                 Home
@@ -86,13 +117,13 @@ const Navbar = () => {
           </div>
           <div className="hidden md:flex items-center space-x-4">
           
-            <Link 
-              to="/login"
+            <button 
+              onClick={() => handleSignButton()}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-blue-600 bg-white hover:bg-gray-50 transition-colors duration-200"
             >
               <LogIn className="mr-2 h-4 w-4" />
-              Sign in
-            </Link>
+              {signtext}
+            </button>
             <Link 
               to="/premium"
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 transition-colors duration-200"
@@ -172,12 +203,13 @@ const Navbar = () => {
             >
               Dashboard
             </Link>
-            <Link 
-              to="/login"
-              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+            <button 
+              onClick={() => handleSignButton()}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-blue-600 bg-white hover:bg-gray-50 transition-colors duration-200"
             >
-              Sign in
-            </Link>
+              <LogIn className="mr-2 h-4 w-4" />
+              {signtext}
+            </button>
             <div className="mt-4 pl-3 pr-4">
             <Link 
               to="/premium"

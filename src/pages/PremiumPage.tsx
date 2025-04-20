@@ -2,12 +2,27 @@ import React, { useState } from 'react';
 import { Crown, Check, X, ArrowRight, Shield, Clock, Phone, Users } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import api from '../utils/api/api'; // Fixed import path
 
 const PremiumPage = () => {
   const [couponCode, setCouponCode] = useState('');
   const [isApplying, setIsApplying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const fetchUserData = async () => {
+    try {
+      const coupon_code = couponCode;
+      const response = await api.post('/users/redeem/', coupon_code);
+      console.log('Response:', response.data);
+    } catch (err) {
+      console.error('Error calling api:', err);
+      const errorMessage = (err as any)?.response?.data?.error || "Failed to call api. Please try again.";
+      console.log(errorMessage);
+      setError(errorMessage);
+    }
+  };
+  
+fetchUserData();
 
   const benefits = [
     {

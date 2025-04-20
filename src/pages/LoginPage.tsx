@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, User, Lock, Eye, EyeOff , Twitter, Facebook} from 'lucide-react';
 import authService from '../utils/api/auth';
+import api from '../utils/api/api'; // Fixed import path
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [userData, setUserData] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const saveUserData = async () => {
+      if (userData) {
+        console.log('userData updated:', userData);
+        await sessionStorage.setItem('userData', JSON.stringify(userData)); // technically no need for await here
+      }
+    };
+  
+    saveUserData();
+  }, [userData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +40,25 @@ const LoginPage = () => {
         sessionStorage.setItem('access_token', access);
         sessionStorage.setItem('refresh_token', refresh);
       }
-
+      const fetchUserData = async () => {
+          try {
+            setLoading(true);
+            const response = await api.get('/users/me/');
+            setUserData(response.data);
+            sessionStorage.setItem('userData', JSON.stringify(response.data));
+            console.log('User data:', response.data);
+          } catch (err) {
+            console.error('Error fetching user data:', err);
+            const errorMessage = (err as any)?.response?.data?.error || "Failed to book appointment. Please try again.";
+            console.log(errorMessage);
+            setError(errorMessage);
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+      fetchUserData();
+      
       const decoded = authService.decodeToken(access);
       console.log('Logged in user:', decoded);
       navigate('/');
