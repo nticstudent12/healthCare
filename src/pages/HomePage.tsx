@@ -6,7 +6,7 @@ import Services from '../components/Services';
 import HealthNews from '../components/HealthNews';
 import Wellness from '../components/Wellness';
 import Testimonials from '../components/Testimonials';
-import ScanUpload from '../components/ScanUpload';
+
 import CallToAction from '../components/CallToAction';
 import Footer from '../components/Footer';
 
@@ -38,7 +38,7 @@ function HomePage() {
         </div>
       </div>
       <Services  />
-      <ScanUpload />
+    
       <HealthNews />
       <Wellness />
       <Testimonials />

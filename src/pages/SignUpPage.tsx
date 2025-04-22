@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Mail, Lock, Eye, EyeOff, Facebook, Twitter, User, Calendar, CheckCircle, PhoneCallIcon, Phone, PhoneIcon } from 'lucide-react';
+import { Heart, Mail, Lock, Eye, EyeOff, Facebook, Twitter, User, Calendar, CheckCircle, PhoneIcon } from 'lucide-react';
 import axios from 'axios';
 
 const SignUpPage = () => {

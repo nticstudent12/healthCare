@@ -14,11 +14,13 @@ import {
   Eye,
   AlertCircle,
   CheckCircle,
+  ScanBarcodeIcon,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useState, useEffect } from 'react';
 import api from '../utils/api/api'; // Fixed import path
+import ScanUpload from '../components/ScanUpload';
 
 type Appointment = {
   id: number;
@@ -70,7 +72,7 @@ const DashboardPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support' | 'scaner'>('overview');
   const [username, setUsername] = useState<string>('John Doe');
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -107,7 +109,7 @@ const DashboardPage = () => {
   const [smsNotifications, setSmsNotifications] = useState(userData?.settings?.sms_notifications ?? false);
   const [darkMode, setDarkMode] = useState(userData?.settings?.dark_mode ?? false); 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-
+  
   // Fetch appointments data when component mounts
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -655,6 +657,8 @@ const toggleSmsNotifications = () => {
     </div>
   );
   
+
+
   const renderSupport = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -712,6 +716,12 @@ const toggleSmsNotifications = () => {
       </div>
     </div>
   );
+
+  function renderScan() {
+    return (
+        <ScanUpload />
+      )
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -782,6 +792,18 @@ const toggleSmsNotifications = () => {
                 </button>
                 
                 <button
+                  onClick={() => setActiveTab('scaner')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'scaner'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <ScanBarcodeIcon className="h-5 w-5" />
+                  <span>Scaner</span>
+                </button>
+
+                <button
                   onClick={() => setActiveTab('support')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
                     activeTab === 'support'
@@ -791,6 +813,7 @@ const toggleSmsNotifications = () => {
                 >
                   <MessageSquare className="h-5 w-5" />
                   <span>Support</span>
+                  
                 </button>
               </nav>
             </div>
@@ -803,6 +826,7 @@ const toggleSmsNotifications = () => {
             {activeTab === 'records' && renderMedicalRecords()}
             {activeTab === 'settings' && renderSettings()}
             {activeTab === 'support' && renderSupport()}
+            {activeTab === 'scaner' && renderScan()}
           </div>
         </div>
       </div>
