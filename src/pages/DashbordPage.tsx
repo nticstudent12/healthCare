@@ -73,7 +73,7 @@ const DashboardPage = () => {
   const [newPassword, setNewPassword] = useState('');
   
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support' | 'scaner'>('overview');
-  const [username, setUsername] = useState<string>('John Doe');
+
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
@@ -103,57 +103,54 @@ const DashboardPage = () => {
   
   const [userData, setUserData] = useState<UserData | null>(null);
   
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+ 
   const [emailNotifications, setEmailNotifications] = useState(userData?.settings?.email_notifications ?? false);
   const [smsNotifications, setSmsNotifications] = useState(userData?.settings?.sms_notifications ?? false);
-  const [darkMode, setDarkMode] = useState(userData?.settings?.dark_mode ?? false); 
+ 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   
   // Fetch appointments data when component mounts
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        setLoading(true);
+       
         const response = await api.get('/users/appointments/');
         setAppointments(response.data);
         console.log('Appointments data:', response.data);
-        setError(null);
+       
       } catch (err) {
         console.error('Error fetching appointments:', err);
-        setError('Failed to load appointments. Please try again later.');
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchAppointments();
   }, []);
+
   const appointments_lengh =appointments.length || "no appointments" ;
-  const all_appointments = appointments;
-  const upcoming_appointment = all_appointments[0];
+ 
+  
  
 
   // Fetch user data when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        setLoading(true);
+     
         const response = await api.get('/users/me/');
         setUserData(response.data);
         console.log('User data:', response.data);
-        setError(null);
+       
       } catch (err) {
         console.error('Error fetching user data:', err);
-        setError('Failed to load user data. Please try again later.');
-      } finally {
-        setLoading(false);
       }
+     
     };
     
     fetchUserData();
   }, []);
-  const name = userData ? `${userData.first_name} ${userData.last_name}` : username; // Fallback to default username if not available
+  const name = userData?.first_name && userData?.last_name 
+    ? `${userData.first_name} ${userData.last_name}` 
+    : userData?.username || 'Guest'; // Fallback to username or 'Guest' if not available
   const patient_id = userData?.id || '000000'
   
 
@@ -260,18 +257,16 @@ const toggleSmsNotifications = () => {
     };
     console.log('Updated data:', passwordData);
     try {
-      setLoading(true);
+      
       const response = await api.patch('users/me/password/', passwordData);
       
       console.log('User data updated successfully:', response.data);
-      setError(null);
+    
       alert('Changes saved successfully!');
     } catch (err) {
       console.error('Error saving changes:', err);
-      setError('Failed to save changes. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
+    
+    } 
   }
 
   const handleSaveChanges = async () => {
@@ -285,26 +280,20 @@ const toggleSmsNotifications = () => {
       last_name: lastNameInput?.value || userData?.last_name,
       email: emailInput?.value || userData?.email,
       phone_number: phoneInput?.value || userData?.phone_number,
-      settings: {
-        dark_mode: darkMode,
-        email_notifications: emailNotifications,
-        sms_notifications: smsNotifications,
-      },
+     
     };
     console.log('Updated data:', updatedData);
     try {
-      setLoading(true);
+    
       const response = await api.patch('/users/me/', updatedData);
       setUserData(response.data);
       console.log('User data updated successfully:', response.data);
-      setError(null);
+     
       alert('Changes saved successfully!');
     } catch (err) {
       console.error('Error saving changes:', err);
-      setError('Failed to save changes. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
+      
+    } 
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     // Update state when input changes
