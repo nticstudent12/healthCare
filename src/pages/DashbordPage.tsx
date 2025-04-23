@@ -321,6 +321,7 @@ const toggleSmsNotifications = () => {
     <div className="space-y-6">
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Upcoming Appointments */}
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
             <Calendar className="h-8 w-8 text-blue-500" />
@@ -330,6 +331,8 @@ const toggleSmsNotifications = () => {
             </div>
           </div>
         </div>
+
+        {/* Medical Records */}
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
             <FileText className="h-8 w-8 text-green-500" />
@@ -339,6 +342,8 @@ const toggleSmsNotifications = () => {
             </div>
           </div>
         </div>
+
+        {/* Messages */}
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
             <MessageSquare className="h-8 w-8 text-purple-500" />
@@ -350,24 +355,42 @@ const toggleSmsNotifications = () => {
         </div>
       </div>
 
-      {/* Next Appointment */}
-      <div className="bg-white p-6 rounded-xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Appointment</h3>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <Calendar className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-base text-black-500">March 15, 2024 at 10:00 AM</p>
-            </div>
-          </div>
-          <Link
-            to="/book-appointment"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Reschedule
-          </Link>
+      {/* Completed Appointments */}
+      <div className="bg-white p-6 rounded-xl shadow-sm mt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Appointments</h3>
+        <div className="space-y-4">
+          {appointments
+            .filter((appointment) => appointment.status === 'completed')
+            .map((completedAppointment) => (
+              <div key={completedAppointment.id} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <Calendar className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-base text-gray-900">
+                      {new Date(completedAppointment.appointment_date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}{' '}
+                      at{' '}
+                      {new Date(completedAppointment.appointment_date).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/book-appointment"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Reschedule
+                </Link>
+              </div>
+            ))}
         </div>
       </div>
 
