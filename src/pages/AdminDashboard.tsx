@@ -1,19 +1,21 @@
-import {
-  User,
-  Settings,
-  FileText,
-  Users,
-  Brain,
-  Search,
-  Download,
-  BarChart,
-  Activity,
-  Shield
+import { 
+  User, 
+  Settings, 
+  FileText, 
+  Users, 
+  Brain, 
+  Search, 
+  Download, 
+  BarChart, 
+  Activity, 
+  Shield, 
+  Gift 
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useEffect, useState } from 'react';
 import api from '../utils/api/api';
+
 interface User {
   id: number;
   username: string;
@@ -29,11 +31,21 @@ interface User {
   settings: Record<string, any>; // Use a more specific type if you know the structure
   pic: string | null;
 }
+
+interface Coupon {
+  id: number;
+  coupon_code: string;
+  valid_until: string;
+  description: string;
+}
+
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
+  const [coupons, setCoupons] = useState<Coupon[]>([]); // State to store coupons
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -43,16 +55,31 @@ const AdminDashboard = () => {
           },
         });
         setUsers(response.data); // Update users state
-        console.log('Fetched users:', response.data); // Log fetched users
-        setTotalUsers(response.data.length);
-        console.log(response.data.length) // Update total users count
+        setTotalUsers(response.data.length); // Update total users count
       } catch (error) {
         console.error('Error fetching users:', error);
       }
     };
 
+    const fetchCoupons = async () => {
+      try {
+        const response = await api.get('/admin/coupons/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`, // Include token if required
+          },
+        });
+        setCoupons(response.data); // Update coupons state
+      } catch (error) {
+        console.error('Error fetching coupons:', error);
+      }
+    };
+
     if (activeTab === 'users' || activeTab === 'overview') {
       fetchUsers();
+    }
+
+    if (activeTab === 'coupons') {
+      fetchCoupons();
     }
   }, [activeTab]);
 
@@ -520,6 +547,46 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const renderCoupons = () => (
+    <div className="bg-white rounded-xl shadow-sm">
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Coupons</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Coupon Code
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Valid Until
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Description
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {coupons.map((coupon) => (
+                <tr key={coupon.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {coupon.coupon_code}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(coupon.valid_until).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {coupon.description}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -599,6 +666,18 @@ const AdminDashboard = () => {
                   <Brain className="h-5 w-5" />
                   <span>AI Models</span>
                 </button>
+
+                <button
+                  onClick={() => setActiveTab('coupons')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'coupons'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Gift className="h-5 w-5" />
+                  <span>Coupons</span>
+                </button>
               </nav>
             </div>
           </div>
@@ -610,6 +689,7 @@ const AdminDashboard = () => {
             {activeTab === 'users' && renderUsers()}
             {activeTab === 'reports' && renderReports()}
             {activeTab === 'ai-models' && renderAIModels()}
+            {activeTab === 'coupons' && renderCoupons()}
           </div>
         </div>
       </div>
