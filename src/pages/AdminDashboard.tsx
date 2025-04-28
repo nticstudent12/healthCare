@@ -1,15 +1,24 @@
 import { 
   User, 
-  Settings, 
+  
   FileText, 
   Users, 
   Brain, 
   Search, 
   Download, 
   BarChart, 
-  Activity, 
+
   Shield, 
-  Gift 
+  Gift, 
+  ArrowLeft, 
+  UserCircle,
+  Mail,
+  Phone,
+  UserX,
+  
+  Calendar,
+  
+  Plus,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -28,7 +37,7 @@ interface User {
   role: string;
   premium_status: boolean;
   ai_tries: number;
-  settings: Record<string, any>; // Use a more specific type if you know the structure
+  settings: Record<string, unknown>; // Use a more specific type if you know the structure
   pic: string | null;
 }
 
@@ -39,12 +48,22 @@ interface Coupon {
   description: string;
 }
 
+interface AIModel {
+  id: number;
+  model_name: string;
+  created_at: string;
+  status: string;
+  parameters: Record<string, unknown>;
+}
+
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState([]); // State to store users
+  const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
   const [coupons, setCoupons] = useState<Coupon[]>([]); // State to store coupons
+  const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
+  const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -74,12 +93,29 @@ const AdminDashboard = () => {
       }
     };
 
+    const fetchAIModels = async () => {
+      try {
+        const response = await api.get('/admin/ai/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setAIModels(response.data); // Update AI models state
+      } catch (error) {
+        console.error('Error fetching AI models:', error);
+      }
+    };
+
     if (activeTab === 'users' || activeTab === 'overview') {
       fetchUsers();
     }
 
     if (activeTab === 'coupons') {
       fetchCoupons();
+    }
+
+    if (activeTab === 'ai-models') {
+      fetchAIModels();
     }
   }, [activeTab]);
 
@@ -293,7 +329,7 @@ const AdminDashboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button className="text-blue-600 hover:text-blue-900 mr-4">Edit</button>
-                    <button className="text-red-600 hover:text-red-900">Disable</button>
+                   
                   </td>
                 </tr>
               ))}
@@ -347,9 +383,7 @@ const AdminDashboard = () => {
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          <User className="h-5 w-5 mt-2 " />
-                        </div>
+                        
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{user.username}</div>
                           <div className="text-sm text-gray-500">{user.email}</div>
@@ -371,8 +405,16 @@ const AdminDashboard = () => {
                       {user.role}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-4">View Details</button>
-                      <button className="text-red-600 hover:text-red-900">Disable</button>
+                      <button
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setActiveTab('user-details');
+                        }}
+                      >
+                        View Details
+                      </button>
+                    
                     </td>
                   </tr>
                 ))}
@@ -382,8 +424,120 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
+  const renderUserDetails = () => (
+    <div className="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto">
+      <button
+        className="flex items-center text-blue-600 hover:text-blue-800 mb-8 transition-colors duration-200 group"
+        onClick={() => setActiveTab('users')}
+      >
+        <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+        <span className="font-medium">Back to User Management</span>
+      </button>
   
-
+      {selectedUser ? (
+        <div className="space-y-8">
+          {/* Header with user status */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{selectedUser.username}</h2>
+              <p className="text-gray-500">User ID: {selectedUser.id}</p>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              selectedUser.premium_status 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {selectedUser.premium_status ? 'Premium Member' : 'Standard Member'}
+            </span>
+          </div>
+  
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Personal Information Card */}
+            <div className="border border-gray-200 rounded-lg p-5 bg-gray-50/50">
+              <div className="flex items-center mb-4">
+                <UserCircle className="h-5 w-5 text-gray-500 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-800">Personal Information</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <DetailRow 
+                  label="Full Name:" 
+                  value={`${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || 'Not provided'} 
+                />
+                <DetailRow 
+                  label="Email:" 
+                  value={selectedUser.email || <span className="text-gray-400">Not available</span>}
+                  icon={<Mail className="h-4 w-4 text-gray-400" />}
+                />
+                <DetailRow 
+                  label="Phone:" 
+                  value={selectedUser.phone_number || <span className="text-gray-400">Not provided</span>}
+                  icon={<Phone className="h-4 w-4 text-gray-400" />}
+                />
+              </div>
+            </div>
+  
+            {/* Account Information Card */}
+            <div className="border border-gray-200 rounded-lg p-5 bg-gray-50/50">
+              <div className="flex items-center mb-4">
+                <Shield className="h-5 w-5 text-gray-500 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-800">Account Information</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <DetailRow 
+                  label="User Role:" 
+                  value={<span className="capitalize">{selectedUser.role}</span>}
+                />
+                <DetailRow 
+                  label="Age:" 
+                  value={selectedUser.age || <span className="text-gray-400">Not specified</span>}
+                />
+                <DetailRow 
+                  label="Gender:" 
+                  value={selectedUser.gender === 'M' ? 'Male' : selectedUser.gender === 'F' ? 'Female' : 'Other'}
+                />
+                <DetailRow 
+                  label="AI Tries:" 
+                  value={selectedUser.ai_tries ?? <span className="text-gray-400">Not available</span>}
+                />
+              </div>
+            </div>
+          </div>
+  
+          {/* Additional Actions Section */}
+          <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+           
+           
+            <button className="px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors">
+              Deactivate Account
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <UserX className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No User Selected</h3>
+          <p className="mt-2 text-gray-500">Please select a user from the list to view details</p>
+        </div>
+      )}
+    </div>
+  );
+  
+  // Improved DetailRow component
+  const DetailRow = ({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) => (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="col-span-1">
+        <p className="text-sm text-gray-500 font-medium">{label}</p>
+      </div>
+      <div className="col-span-2 flex items-center">
+        {icon && <span className="mr-2">{icon}</span>}
+        <p className="text-sm text-gray-800">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
   const renderReports = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm">
@@ -469,75 +623,73 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-
   const renderAIModels = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">AI Models</h3>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">AI Models</h3>
+              <p className="text-sm text-gray-500 mt-1">Manage and deploy your AI models</p>
+            </div>
+            <button 
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
               Deploy New Model
             </button>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              {
-                name: 'Diagnostic Prediction v2.3',
-                status: 'Active',
-                accuracy: '97.8%',
-                lastUpdated: '2024-03-15',
-                type: 'Classification'
-              },
-              {
-                name: 'Image Analysis v1.5',
-                status: 'Training',
-                accuracy: '94.2%',
-                lastUpdated: '2024-03-14',
-                type: 'Computer Vision'
-              }
-            ].map((model, index) => (
-              <div key={index} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900">{model.name}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{model.type}</p>
+  
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {aiModels.map((model) => (
+              <div 
+                key={model.id} 
+                className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow duration-200 bg-white"
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Brain className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">{model.model_name}</h4>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    model.status === 'Active'
+                  <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                    model.status === 'deployed'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                      : model.status === 'training'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-gray-100 text-gray-800'
                   }`}>
                     {model.status}
-                  </span>
+                  </div>
                 </div>
+  
+                <div className="space-y-3 mt-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>Created: {new Date(model.created_at).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}</span>
+                  </div>
+  
                 
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-500">Accuracy</span>
-                    <span className="text-sm font-medium text-blue-600">{model.accuracy}</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full">
-                    <div
-                      className="h-2 bg-blue-500 rounded-full"
-                      style={{ width: model.accuracy }}
-                    ></div>
-                  </div>
                 </div>
-
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
-                    Last updated: {model.lastUpdated}
-                  </span>
-                  <div className="flex space-x-2">
-                    <button className="p-2 text-gray-400 hover:text-gray-500">
-                      <Activity className="h-5 w-5" />
+  
+                <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-2">
+                  <button 
+                    className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  >
+                    View Details
+                  </button>
+                  {model.status === 'deployed' && (
+                    <button 
+                      className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                    >
+                      Redeploy
                     </button>
-                    <button className="p-2 text-gray-400 hover:text-gray-500">
-                      <Settings className="h-5 w-5" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -687,6 +839,7 @@ const AdminDashboard = () => {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'doctors' && renderDoctors()}
             {activeTab === 'users' && renderUsers()}
+            {activeTab === 'user-details' && renderUserDetails()}
             {activeTab === 'reports' && renderReports()}
             {activeTab === 'ai-models' && renderAIModels()}
             {activeTab === 'coupons' && renderCoupons()}
