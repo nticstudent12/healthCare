@@ -25,6 +25,14 @@ import Footer from '../components/Footer';
 import { useEffect, useState } from 'react';
 import api from '../utils/api/api';
 
+
+interface Appointment {
+  id: number;
+  user: number; // User ID associated with the appointment
+  appointment_date: string; // ISO date string
+  status: 'completed' | 'pending' | 'confirmed' | 'finished'; // Enum for status
+  reference: string | null; // Optional reference field
+}
 interface User {
   id: number;
   username: string;
@@ -57,14 +65,91 @@ interface AIModel {
 }
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
   const [coupons, setCoupons] = useState<Coupon[]>([]); // State to store coupons
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
+  const [appointments, setAppointments] = useState<Appointment[]>([]); 
 
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const response = await api.get('/admin/appointments/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setAppointments(response.data); // Update appointments state
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+      }
+    };
+
+    if (activeTab === 'appointments') {
+      fetchAppointments();
+    }
+  }, [activeTab]);
+
+  const renderAppointments = () => (
+    <div className="bg-white rounded-xl shadow-sm">
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Appointments</h3>
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Username
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Appointment Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {appointments.map((appointment) => (
+                <tr key={appointment.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {appointment.user}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(appointment.appointment_date).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        appointment.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : appointment.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : appointment.status === 'confirmed'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {appointment.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -634,6 +719,30 @@ const AdminDashboard = () => {
             </div>
             <button 
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+              onClick={async () => {
+              const modelFile = prompt("Please provide the path to the AI model file (.h5 or .keras):");
+              if (!modelFile) {
+                alert("Model file is required.");
+                return;
+              }
+
+              const formData = new FormData();
+              formData.append("model_file", modelFile);
+
+              try {
+                const response = await api.post('/admin/ai/upload/', formData, {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                  "Content-Type": "multipart/form-data",
+                },
+                });
+                alert("AI model deployed successfully.");
+                setAIModels((prevModels) => [...prevModels, response.data]);
+              } catch (error) {
+                console.error("Error deploying AI model:", error);
+                alert("Failed to deploy the AI model. Please try again.");
+              }
+              }}
             >
               <Plus className="h-4 w-4" />
               Deploy New Model
@@ -678,18 +787,34 @@ const AdminDashboard = () => {
                 </div>
   
                 <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-2">
-                  <button 
-                    className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                  >
-                    View Details
-                  </button>
-                  {model.status === 'deployed' && (
-                    <button 
-                      className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                  
+                    {model.status === 'deployed' && (
+                    <button
+                      className="px-3 py-1.5 text-base text-red-600 border border-red-600 hover:bg-green-50 rounded-md transition-colors"
+                      onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete the AI model "${model.model_name}"?`)) {
+                        api
+                        .delete(`/admin/ai/${model.id}/`, {
+                          headers: {
+                          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                          },
+                        })
+                        .then(() => {
+                          alert('AI model deleted successfully.');
+                          setAIModels((prevModels) =>
+                          prevModels.filter((m) => m.id !== model.id)
+                          );
+                        })
+                        .catch((error) => {
+                          console.error('Error deleting AI model:', error);
+                          alert('Failed to delete the AI model. Please try again.');
+                        });
+                      }
+                      }}
                     >
-                      Redeploy
+                      Delete
                     </button>
-                  )}
+                    )}
                 </div>
               </div>
             ))}
@@ -794,7 +919,17 @@ const AdminDashboard = () => {
                   <Users className="h-5 w-5" />
                   <span>Users</span>
                 </button>
-                
+                <button
+                  onClick={() => setActiveTab('appointments')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'appointments'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span>Appointments</span>
+                </button>
                 <button
                   onClick={() => setActiveTab('reports')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
@@ -843,6 +978,8 @@ const AdminDashboard = () => {
             {activeTab === 'reports' && renderReports()}
             {activeTab === 'ai-models' && renderAIModels()}
             {activeTab === 'coupons' && renderCoupons()}
+            {activeTab === 'appointments' && renderAppointments()}
+        
           </div>
         </div>
       </div>
