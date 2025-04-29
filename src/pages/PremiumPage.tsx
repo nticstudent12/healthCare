@@ -9,20 +9,6 @@ const PremiumPage = () => {
   const [isApplying, setIsApplying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const fetchUserData = async () => {
-    try {
-      const coupon_code = couponCode;
-      const response = await api.post('/users/redeem/', coupon_code);
-      console.log('Response:', response.data);
-    } catch (err) {
-      console.error('Error calling api:', err);
-      const errorMessage = (err as any)?.response?.data?.error || "Failed to call api. Please try again.";
-      console.log(errorMessage);
-      setError(errorMessage);
-    }
-  };
-  
-fetchUserData();
 
   const benefits = [
     {
@@ -47,20 +33,49 @@ fetchUserData();
     }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsApplying(true);
     setError('');
+    setSuccess(false);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (couponCode.toLowerCase() === 'health2024') {
-        setSuccess(true);
-      } else {
-        setError('Invalid coupon code. Please try again.');
-      }
+    if (!couponCode) {
+      setError('Please enter a coupon code.');
       setIsApplying(false);
-    }, 1500);
+      return;
+    }
+
+    try {
+      const token = sessionStorage.getItem('access_token');
+      if (!token) {
+        setError('Authentication token is missing. Please log in again.');
+        setIsApplying(false);
+        return;
+      }
+
+      const response = await api.post(
+        '/users/redeem/',
+        { coupon_code: couponCode }, // Payload matches backend expectations
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Token is sent in the Authorization header
+          },
+        }
+      );
+
+      if (response.data) {
+        setSuccess(true);
+        console.log('Coupon redeemed successfully:', response.data);
+      }
+    } catch (err) {
+      console.error('Error redeeming coupon:', err);
+      const errorMessage =
+        (err as unknown as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Failed to redeem coupon. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   if (success) {

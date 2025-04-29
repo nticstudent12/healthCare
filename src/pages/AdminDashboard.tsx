@@ -104,9 +104,7 @@ const AdminDashboard = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Username
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User ID
-                </th>
+               
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Appointment Date
                 </th>
@@ -121,9 +119,7 @@ const AdminDashboard = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {appointment.user}
-                  </td>
+                
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(appointment.appointment_date).toLocaleString()}
                   </td>
@@ -240,7 +236,7 @@ const AdminDashboard = () => {
             <Brain className="h-8 w-8 text-purple-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">AI Models</p>
-              <p className="text-2xl font-semibold text-gray-900">5</p>
+              <p className="text-2xl font-semibold text-gray-900">{aiModels.length}</p>
             </div>
           </div>
         </div>
@@ -593,10 +589,38 @@ const AdminDashboard = () => {
           {/* Additional Actions Section */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
            
-           
-            <button className="px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors">
-              Deactivate Account
-            </button>
+          {selectedUser?.premium_status && (
+  <button
+    className="px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors"
+    onClick={async () => {
+      if (window.confirm(`Are you sure you want to revoke premium access for ${selectedUser.username}?`)) {
+        try {
+          // Send PATCH request to update the premium status
+          await api.patch(
+            `/admin/users/${selectedUser.id}/revoke/`,
+            { premium_status: false }, // Payload to update premum status
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+              },
+            }
+          );
+          alert('Premium access revoked successfully.');
+          setSelectedUser({
+            ...selectedUser,
+            premium_status: false,
+            ai_tries: Math.max(selectedUser.ai_tries - 5, 0), // Update AI tries locally
+          });
+        } catch (error) {
+          console.error('Error revoking premium access:', error);
+          alert('Failed to revoke premium access. Please try again.');
+        }
+      }
+    }}
+  >
+    Revoke Premium Access
+  </button>
+)}
           </div>
         </div>
       ) : (
@@ -717,36 +741,43 @@ const AdminDashboard = () => {
               <h3 className="text-xl font-semibold text-gray-900">AI Models</h3>
               <p className="text-sm text-gray-500 mt-1">Manage and deploy your AI models</p>
             </div>
-            <button 
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
-              onClick={async () => {
-              const modelFile = prompt("Please provide the path to the AI model file (.h5 or .keras):");
-              if (!modelFile) {
-                alert("Model file is required.");
-                return;
-              }
+            <div>
+              <input
+              type="file"
+              id="modelFileInput"
+              accept=".h5,.keras"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                const formData = new FormData();
+                formData.append('model_file', file);
+                formData.append('model_name', file.name);
 
-              const formData = new FormData();
-              formData.append("model_file", modelFile);
-
-              try {
-                const response = await api.post('/admin/ai/upload/', formData, {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                  "Content-Type": "multipart/form-data",
-                },
-                });
-                alert("AI model deployed successfully.");
-                setAIModels((prevModels) => [...prevModels, response.data]);
-              } catch (error) {
-                console.error("Error deploying AI model:", error);
-                alert("Failed to deploy the AI model. Please try again.");
-              }
+                try {
+                  const response = await api.post('/admin/ai/upload/', formData, {
+                  headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                  },
+                  });
+                  alert('Model uploaded successfully.');
+                  setAIModels((prevModels) => [...prevModels, response.data]);
+                } catch (error) {
+                  console.error('Error uploading model:', error);
+                  alert('Failed to upload the model. Please try again.');
+                }
+                }
               }}
-            >
+              />
+              <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+              onClick={() => document.getElementById('modelFileInput')?.click()}
+              >
               <Plus className="h-4 w-4" />
               Deploy New Model
-            </button>
+              </button>
+            </div>
           </div>
   
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -827,7 +858,54 @@ const AdminDashboard = () => {
   const renderCoupons = () => (
     <div className="bg-white rounded-xl shadow-sm">
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Coupons</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Coupons</h3>
+            <button
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+            onClick={async () => {
+              const couponCode = prompt("Enter coupon code:");
+              const validUntil = prompt("Enter valid until date (YYYY-MM-DD):");
+              const description = prompt("Enter coupon description:");
+
+              if (couponCode && validUntil && description) {
+              // Validate and format the date
+              const parsedDate = new Date(validUntil);
+              if (isNaN(parsedDate.getTime())) {
+                alert('Invalid date format. Please use YYYY-MM-DD.');
+                return;
+              }
+              const formattedDate = parsedDate.toISOString().split('T')[0]; // Ensure proper format
+
+              try {
+                const response = await api.post(
+                '/admin/coupons/create/',
+                {
+                  coupon_code: couponCode,
+                  valid_until: formattedDate,
+                  description: description,
+                },
+                {
+                  headers: {
+                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                  },
+                }
+                );
+                alert('Coupon created successfully.');
+                setCoupons((prevCoupons) => [...prevCoupons, response.data]);
+              } catch (error) {
+                console.error('Error creating coupon:', error);
+                alert('Failed to create coupon. Please try again.');
+              }
+              } else {
+              alert('All fields are required to create a coupon.');
+              }
+            }}
+            >
+            <Plus className="h-4 w-4" />
+            Add Coupon
+            </button>
+           
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
