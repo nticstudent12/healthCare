@@ -24,8 +24,14 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useEffect, useState } from 'react';
 import api from '../utils/api/api';
-
-
+interface MedicalHistoryRecord {
+  id: number;
+  user: number; // User ID associated with the record
+  scan: string; // URL of the scan image
+  ai_interpretation: string | { diagnosis: string; confidence: number }; // AI interpretation can be a string or an object
+  appointment: number | null; // Appointment ID or null if not linked
+  record_date: string; // ISO date string
+}
 interface Appointment {
   id: number;
   user: number; // User ID associated with the appointment
@@ -65,7 +71,7 @@ interface AIModel {
 }
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
@@ -73,6 +79,27 @@ const AdminDashboard = () => {
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]); // State for medical history
+
+
+  useEffect(() => {
+    const fetchMedicalHistory = async () => {
+      try {
+        const response = await api.get('/admin/history/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setMedicalHistory(response.data); // Update medical history state
+      } catch (error) {
+        console.error('Error fetching medical history:', error);
+      }
+    };
+  
+    if (activeTab === 'medical-history') {
+      fetchMedicalHistory();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -92,6 +119,67 @@ const AdminDashboard = () => {
       fetchAppointments();
     }
   }, [activeTab]);
+
+
+
+  const renderMedicalHistory = () => (
+    <div className="bg-white rounded-xl shadow-sm">
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Medical History</h3>
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Username
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Scan
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  AI Interpretation
+                </th>
+               
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Record Date
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {medicalHistory.map((medicalHistory: MedicalHistoryRecord) => (
+                <tr key={medicalHistory.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {users.find((user) => user.id === medicalHistory.user)?.username || 'Unknown'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <a
+                      href={medicalHistory.scan}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      View Scan
+                    </a>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {typeof medicalHistory.ai_interpretation === 'string'
+                      ? medicalHistory.ai_interpretation
+                      : `${medicalHistory.ai_interpretation.diagnosis} (${medicalHistory.ai_interpretation.confidence.toFixed(
+                          2
+                        )}%)`}
+                  </td>
+   
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(medicalHistory.record_date).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderAppointments = () => (
     <div className="bg-white rounded-xl shadow-sm">
@@ -770,6 +858,7 @@ const AdminDashboard = () => {
                 }
               }}
               />
+
               <button
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
               onClick={() => document.getElementById('modelFileInput')?.click()}
@@ -861,7 +950,7 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900">Coupons</h3>
             <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-mdب hover:bg-blue-700 flex items-center gap-2"
             onClick={async () => {
               const couponCode = prompt("Enter coupon code:");
               const validUntil = prompt("Enter valid until date (YYYY-MM-DD):");
@@ -985,7 +1074,17 @@ const AdminDashboard = () => {
                   <User className="h-5 w-5" />
                   <span>Doctors</span>
                 </button>
-                
+                <button
+  onClick={() => setActiveTab('medical-history')}
+  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+    activeTab === 'medical-history'
+      ? 'bg-blue-50 text-blue-700'
+      : 'text-gray-600 hover:bg-gray-50'
+  }`}
+>
+  <FileText className="h-5 w-5" />
+  <span>Medical History</span>
+</button>
                 <button
                   onClick={() => setActiveTab('users')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
@@ -1057,6 +1156,7 @@ const AdminDashboard = () => {
             {activeTab === 'ai-models' && renderAIModels()}
             {activeTab === 'coupons' && renderCoupons()}
             {activeTab === 'appointments' && renderAppointments()}
+            {activeTab === 'medical-history' && renderMedicalHistory()}
         
           </div>
         </div>
