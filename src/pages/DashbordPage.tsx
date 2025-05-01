@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import {
   User,
@@ -9,9 +8,7 @@ import {
   Bell,
   Clock,
   ChevronRight,
-  Search,
-  Download,
-  Eye,
+
   AlertCircle,
   CheckCircle,
   ScanBarcodeIcon,
@@ -27,15 +24,6 @@ type Appointment = {
   user: number;
   appointment_date: string; // ISO 8601 format
   status: 'missed' | 'completed' | 'cancelled' | 'pending' | 'confirmed' | 'upcoming';
-};
-
-type MedicalRecord = {
-  id: string;
-  type: string;
-  date: string;
-  doctor: string;
-  description: string;
-  files?: { name: string; size: string }[];
 };
 
 type Notification = {
@@ -72,7 +60,7 @@ const DashboardPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support' | 'scaner'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support' | 'scaner' | 'medical-history'>('overview');
 
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -109,6 +97,38 @@ const DashboardPage = () => {
  
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   
+  interface MedicalHistoryRecord {
+    id: number;
+    user: number;
+    scan: string;
+    ai_interpretation: string | { diagnosis: string; confidence: number };
+    appointment: number | null;
+    record_date: string;
+  }
+
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]);
+
+
+
+  useEffect(() => {
+    const fetchMedicalHistory = async () => {
+      try {
+        const response = await api.get('/users/history/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setMedicalHistory(response.data);
+        console.log("medical:", response.data);
+      } catch (error) {
+        console.error('Error fetching medical history:', error);
+      }
+    };
+
+    fetchMedicalHistory();
+  }, [activeTab === 'medical-history']);
+
+
   // Fetch appointments data when component mounts
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -153,42 +173,6 @@ const DashboardPage = () => {
     : userData?.username || 'Guest'; // Fallback to username or 'Guest' if not available
   const patient_id = userData?.id || '000000'
   
-
-  const medicalRecords: MedicalRecord[] = [
-    {
-      id: '1',
-      type: 'Blood Test',
-      date: '2024-02-28',
-      doctor: 'Dr. Sarah Johnson',
-      description: 'Routine blood work analysis',
-      files: [
-        { name: 'blood_test_results.pdf', size: '2.4 MB' }
-      ]
-    },
-    {
-      id: '2',
-      type: 'X-Ray',
-      date: '2024-02-15',
-      doctor: 'Dr. Michael Chen',
-      description: 'Chest X-ray examination',
-      files: [
-        { name: 'chest_xray.pdf', size: '5.1 MB' },
-        { name: 'radiologist_report.pdf', size: '1.2 MB' }
-      ]
-    },
-    {
-      id: '3',
-      type: 'Medical Certificate',
-      date: '2024-02-10',
-      doctor: 'Dr. Emily Rodriguez',
-      description: 'General health assessment',
-      files: [
-        { name: 'medical_certificate.pdf', size: '1.1 MB' }
-      ]
-    }
-  ];
-
-
   //this function decide what is the color of status
 
   const getStatusColor = (status: Appointment['status']) => {
@@ -327,7 +311,7 @@ const toggleSmsNotifications = () => {
             <FileText className="h-8 w-8 text-green-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Medical Records</p>
-              <p className="text-2xl font-semibold text-gray-900">8</p>
+             <p> {medicalHistory.length || "No records"}</p>
             </div>
           </div>
         </div>
@@ -473,66 +457,65 @@ const toggleSmsNotifications = () => {
       </div>
     </div>
   );
-
-  const renderMedicalRecords = () => (
-    <div className="bg-white rounded-xl shadow-sm">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Medical Records</h3>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search records..."
-              className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+  const renderMedicalHistory = () => {
+    console.log('Rendering Medical History:', medicalHistory); // Debugging
+    return (
+      <div className="bg-white rounded-xl shadow-sm">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Medical History</h3>
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Scan
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    AI Interpretation
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Appointment
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Record Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {medicalHistory.map((record) => (
+                  <tr key={record.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <a
+                        href={record.scan}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        View Scan
+                      </a>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {typeof record.ai_interpretation === 'string'
+                        ? record.ai_interpretation
+                        : `${record.ai_interpretation.diagnosis} (${record.ai_interpretation.confidence.toFixed(
+                            2
+                          )}%)`}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.appointment ? `Appointment ID: ${record.appointment}` : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(record.record_date).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="space-y-4">
-          {medicalRecords.map(record => (
-            <div key={record.id} className="border rounded-lg p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <FileText className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-lg font-medium text-gray-900">{record.type}</p>
-                    <p className="text-sm text-gray-500">Dr. {record.doctor}</p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(record.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-2">{record.description}</p>
-                    {record.files && (
-                      <div className="mt-3 space-y-2">
-                        {record.files.map(file => (
-                          <div key={file.name} className="flex items-center space-x-3">
-                            <button className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700">
-                              <Download className="h-4 w-4 mr-1" />
-                              {file.name}
-                            </button>
-                            <span className="text-xs text-gray-500">({file.size})</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <button className="text-blue-600 hover:text-blue-700">
-                  <Eye className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
-    </div>
-  );
-  
+    );
+  };
 
   const renderSettings = () => (
     
@@ -735,6 +718,7 @@ const toggleSmsNotifications = () => {
       )
   };
 
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -788,7 +772,7 @@ const toggleSmsNotifications = () => {
                   }`}
                 >
                   <FileText className="h-5 w-5" />
-                  <span>Medical Records</span>
+                  <span>Medical History</span>
                 </button>
                 
                 <button
@@ -827,6 +811,18 @@ const toggleSmsNotifications = () => {
                   <span>Support</span>
                   
                 </button>
+
+                <button
+                  onClick={() => setActiveTab('medical-history')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'medical-history'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <FileText className="h-5 w-5" />
+                  <span>Medical History</span>
+                </button>
               </nav>
             </div>
           </div>
@@ -835,10 +831,11 @@ const toggleSmsNotifications = () => {
           <div className="flex-1">
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'appointments' && renderAppointments()}
-            {activeTab === 'records' && renderMedicalRecords()}
+            {activeTab === 'records' && renderMedicalHistory()}
             {activeTab === 'settings' && renderSettings()}
             {activeTab === 'support' && renderSupport()}
             {activeTab === 'scaner' && renderScan()}
+            {activeTab === 'medical-history' && renderMedicalHistory()}
           </div>
         </div>
       </div>
