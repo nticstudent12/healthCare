@@ -79,27 +79,9 @@ const AdminDashboard = () => {
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
-  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]); // State for medical history
+ // State for medical history
 
 
-  useEffect(() => {
-    const fetchMedicalHistory = async () => {
-      try {
-        const response = await api.get('/admin/history/', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        });
-        setMedicalHistory(response.data); // Update medical history state
-      } catch (error) {
-        console.error('Error fetching medical history:', error);
-      }
-    };
-  
-    if (activeTab === 'medical-history') {
-      fetchMedicalHistory();
-    }
-  }, [activeTab]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -121,6 +103,26 @@ const AdminDashboard = () => {
   }, [activeTab]);
 
 
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]); 
+
+  useEffect(() => {
+    const fetchMedicalHistory = async () => {
+      try {
+        const response = await api.get('/admin/history/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setMedicalHistory(response.data); // Update medical history state
+      } catch (error) {
+        console.error('Error fetching medical history:', error);
+      }
+    };
+  
+    if (activeTab === 'medical-history') {
+      fetchMedicalHistory();
+    }
+  }, [activeTab]);
 
   const renderMedicalHistory = () => (
     <div className="bg-white rounded-xl shadow-sm">
@@ -146,7 +148,7 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {medicalHistory.map((medicalHistory: MedicalHistoryRecord) => (
+              {medicalHistory.map((medicalHistory) => (
                 <tr key={medicalHistory.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {users.find((user) => user.id === medicalHistory.user)?.username || 'Unknown'}
