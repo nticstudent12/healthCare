@@ -722,6 +722,7 @@ const toggleSmsNotifications = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <div className='h-8'></div>
       
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-8">
@@ -812,17 +813,7 @@ const toggleSmsNotifications = () => {
                   
                 </button>
 
-                <button
-                  onClick={() => setActiveTab('medical-history')}
-                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'medical-history'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <FileText className="h-5 w-5" />
-                  <span>Medical History</span>
-                </button>
+                
               </nav>
             </div>
           </div>
@@ -835,7 +826,7 @@ const toggleSmsNotifications = () => {
             {activeTab === 'settings' && renderSettings()}
             {activeTab === 'support' && renderSupport()}
             {activeTab === 'scaner' && renderScan()}
-            {activeTab === 'medical-history' && renderMedicalHistory()}
+         
           </div>
         </div>
       </div>

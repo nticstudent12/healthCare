@@ -704,14 +704,10 @@ const AdminDashboard = () => {
       if (window.confirm(`Are you sure you want to revoke premium access for ${selectedUser.username}?`)) {
         try {
           // Send PATCH request to update the premium status
-          await api.patch(
+          await api.delete(
             `/admin/users/${selectedUser.id}/revoke/`,
-            { premium_status: false }, // Payload to update premum status
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-              },
-            }
+          // Payload to update premum status
+          
           );
           alert('Premium access revoked successfully.');
           setSelectedUser({
@@ -853,34 +849,36 @@ const AdminDashboard = () => {
               <p className="text-sm text-gray-500 mt-1">Manage and deploy your AI models</p>
             </div>
             <div>
-              <input
-              type="file"
-              id="modelFileInput"
-              accept=".h5,.keras"
-              style={{ display: 'none' }}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                const formData = new FormData();
-                formData.append('model_file', file);
-                formData.append('model_name', file.name);
+            <input
+  type="file"
+  id="modelFileInput"
+  accept=".h5,.keras"
+  style={{ display: 'none' }}
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('model_file', file);
+      formData.append('model_name', file.name);
 
-                try {
-                  const response = await api.post('/admin/ai/upload/', formData, {
-                  headers: {
-                    'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                  },
-                  });
-                  alert('Model uploaded successfully.');
-                  setAIModels((prevModels) => [...prevModels, response.data]);
-                } catch (error) {
-                  console.error('Error uploading model:', error);
-                  alert('Failed to upload the model. Please try again.');
-                }
-                }
-              }}
-              />
+      try {
+        const response = await api.post('/admin/ai/upload/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        alert('Model uploaded successfully.');
+        setAIModels((prevModels) => [...prevModels, response.data]);
+      } catch (error) {
+        console.error('Error uploading model:', error);
+        alert('Failed to upload the model. Please try again.');
+      }
+    }
+  }}
+/>
+
+
+
 
               <button
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
@@ -1057,7 +1055,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+      <div className='h-8'></div>
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}

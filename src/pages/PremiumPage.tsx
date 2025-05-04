@@ -82,6 +82,7 @@ const PremiumPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-blue-50">
         <Navbar />
+        <div className='h-8'></div>
         <div className="max-w-4xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
           <div className="bg-white rounded-2xl shadow-xl p-8" data-aos="zoom-in">
             <div className="text-center">
