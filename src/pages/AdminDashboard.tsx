@@ -182,60 +182,94 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // State for selected status
 
-  const renderAppointments = () => (
-    <div className="bg-white rounded-xl shadow-sm">
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Appointments</h3>
-        <div className="overflow-x-auto max-h-96 overflow-y-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Username
-                </th>
-               
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Appointment Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {appointments.map((appointment) => (
-                <tr key={appointment.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
-                  </td>
-                
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(appointment.appointment_date).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        appointment.status === 'completed'
-                          ? 'bg-green-100 text-green-800'
-                          : appointment.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : appointment.status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {appointment.status}
-                    </span>
-                  </td>
+  useEffect(() => {
+    const fetchFilteredAppointments = async (status: string | null) => {
+      try {
+        const endpoint = status
+          ? `/admin/appointments/status/${status}/`
+          : '/admin/appointments/';
+        const response = await api.get(endpoint, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setAppointments(response.data); // Update appointments state
+      } catch (error) {
+        console.error('Error fetching filtered appointments:', error);
+      }
+    };
+
+    fetchFilteredAppointments(selectedStatus); // Fetch appointments when the filter changes
+  }, [selectedStatus]);
+
+  const renderAppointments = () => {
+    return (
+      <div className="bg-white rounded-xl shadow-sm">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Appointments</h3>
+            <select
+              className="border border-gray-300 rounded-md px-4 py-2 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+              value={selectedStatus || ''}
+              onChange={(e) => setSelectedStatus(e.target.value || null)}
+            >
+              <option value="" className="text-gray-500">All Statuses</option>
+              <option value="completed" className="text-green-600 font-medium">Completed</option>
+              <option value="pending" className="text-yellow-600 font-medium">Pending</option>
+              <option value="confirmed" className="text-blue-600 font-medium">Confirmed</option>
+              <option value="finished" className="text-gray-600 font-medium">Finished</option>
+            </select>
+          </div>
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Username
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Appointment Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {appointments.map((appointment) => (
+                  <tr key={appointment.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(appointment.appointment_date).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          appointment.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : appointment.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : appointment.status === 'confirmed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {appointment.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
   useEffect(() => {
     const fetchUsers = async () => {
       try {
