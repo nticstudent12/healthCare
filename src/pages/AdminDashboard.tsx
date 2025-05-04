@@ -19,6 +19,7 @@ import {
   Calendar,
   
   Plus,
+  Edit,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -79,6 +80,7 @@ const AdminDashboard = () => {
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
+  const [dropdownVisible, setDropdownVisible] = useState<number | null>(null);
  // State for medical history
 
 
@@ -91,7 +93,8 @@ const AdminDashboard = () => {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-        setAppointments(response.data); // Update appointments state
+        setAppointments(response.data);
+        console.log(response.data) // Update appointments state
       } catch (error) {
         console.error('Error fetching appointments:', error);
       }
@@ -235,11 +238,13 @@ const AdminDashboard = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {appointments.map((appointment) => (
                   <tr key={appointment.id}>
+                    
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
                     </td>
@@ -260,6 +265,62 @@ const AdminDashboard = () => {
                       >
                         {appointment.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="relative">
+                        <div className="relative group">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className="text-blue-600 hover:text-blue-900"
+                            onClick={() =>
+                              setDropdownVisible(
+                                dropdownVisible === appointment.id ? null : appointment.id
+                              )
+                            }
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          {dropdownVisible === appointment.id && (
+                            <select
+                              className="bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm text-gray-700"
+                              value={appointment.status}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                try {
+                                  await api.patch(`/admin/appointments/${appointment.id}/`, {
+                                    status: newStatus,
+                                  });
+                                  alert(`Status updated to ${newStatus}`);
+                                  setAppointments((prevAppointments) =>
+                                    prevAppointments.map((appt) =>
+                                      appt.id === appointment.id
+                                        ? {
+                                            ...appt,
+                                            status: newStatus as
+                                              | 'completed'
+                                              | 'pending'
+                                              | 'confirmed'
+                                              | 'finished',
+                                          }
+                                        : appt
+                                    )
+                                  );
+                                  setDropdownVisible(null); // Close the dropdown
+                                } catch (error) {
+                                  console.error('Error updating status:', error);
+                                  alert('Failed to update status. Please try again.');
+                                }
+                              }}
+                            >
+                              <option value="completed">Completed</option>
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="finished">Finished</option>
+                            </select>
+                          )}
+                        </div>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}
