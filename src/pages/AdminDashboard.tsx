@@ -587,6 +587,7 @@ const AdminDashboard = () => {
                       </button>
                     
                     </td>
+                    
                   </tr>
                 ))}
             </tbody>
@@ -678,7 +679,24 @@ const AdminDashboard = () => {
   
           {/* Additional Actions Section */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-           
+            <button
+              className="px-4 py-2 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+              onClick={async () => {
+              try {
+                const response = await api.get(`/admin/history/user/${selectedUser?.id}/`, {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
+                });
+                alert(`Medical History: ${JSON.stringify(response.data, null, 2)}`);
+              } catch (error) {
+                console.error('Error fetching medical history:', error);
+                alert('Failed to fetch medical history. Please try again.');
+              }
+              }}
+            >
+              View Medical History
+            </button>
           {selectedUser?.premium_status && (
   <button
     className="px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors"
@@ -709,8 +727,11 @@ const AdminDashboard = () => {
     }}
   >
     Revoke Premium Access
-  </button>
+  </button> 
+
+  
 )}
+
           </div>
         </div>
       ) : (
