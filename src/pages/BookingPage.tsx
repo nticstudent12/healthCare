@@ -94,7 +94,7 @@ const BookingPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        
+        <div className='h-8'></div>
         <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden" data-aos="fade-up">
             <div className="bg-blue-600 px-6 py-8 text-white">
@@ -161,7 +161,7 @@ const BookingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+      <div className='h-8'></div>
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12" data-aos="fade-up">
           <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">

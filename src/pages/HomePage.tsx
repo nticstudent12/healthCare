@@ -14,6 +14,7 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
       <Navbar />
+      
       <Hero />
       <div className="py-12 bg-gray-50" data-aos="fade-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

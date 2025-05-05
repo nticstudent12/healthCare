@@ -85,11 +85,7 @@ const ScanUpload = () => {
     }
   };
 
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+ 
 
   const resetUpload = () => {
     setSelectedFile(null);
@@ -137,7 +133,7 @@ const ScanUpload = () => {
                       htmlFor="file-upload"
                       className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                     >
-                      <span onClick={triggerFileInput}>Upload a file</span>
+                      <span>Upload a file</span>
                       <input
                         id="file-upload"
                         name="file-upload"
@@ -183,6 +179,7 @@ const ScanUpload = () => {
                         >
                           Upload Another File
                         </button>
+                        <button  className=" items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ml-2" >show avilable doctors</button>
                       </div>
                     </div>
                   )}

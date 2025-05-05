@@ -722,21 +722,33 @@ const toggleSmsNotifications = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <div className='h-8'></div>
       
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
           <div className="w-full md:w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <User className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{name}</h2>
-                  <p className="text-sm text-gray-500">Patient ID: #{patient_id}</p>
-                </div>
-              </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+          <User className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-gray-900">{name}</h2>
+          <p className="text-sm text-gray-500 ">Patient ID: #{patient_id}</p>
+          <p className="text-sm">
+            {userData?.premium_status ? (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            Premium Member
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-800">
+            Standard Member
+              </span>
+            )}
+          </p>
+            </div>
+          </div>
               
               <nav className="space-y-2">
                 <button
@@ -812,17 +824,7 @@ const toggleSmsNotifications = () => {
                   
                 </button>
 
-                <button
-                  onClick={() => setActiveTab('medical-history')}
-                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'medical-history'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <FileText className="h-5 w-5" />
-                  <span>Medical History</span>
-                </button>
+                
               </nav>
             </div>
           </div>
@@ -835,7 +837,7 @@ const toggleSmsNotifications = () => {
             {activeTab === 'settings' && renderSettings()}
             {activeTab === 'support' && renderSupport()}
             {activeTab === 'scaner' && renderScan()}
-            {activeTab === 'medical-history' && renderMedicalHistory()}
+         
           </div>
         </div>
       </div>

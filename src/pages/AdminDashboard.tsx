@@ -19,11 +19,15 @@ import {
   Calendar,
   
   Plus,
+  Edit,
+  
+  ScanBarcodeIcon,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useEffect, useState } from 'react';
 import api from '../utils/api/api';
+import ScanUpload from '../components/ScanUpload';
 interface MedicalHistoryRecord {
   id: number;
   user: number; // User ID associated with the record
@@ -83,7 +87,7 @@ interface Doctor {
 }
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'|'scaner'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
@@ -91,7 +95,9 @@ const AdminDashboard = () => {
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]); // State for doctors
+  const [dropdownVisible, setDropdownVisible] = useState<number | null>(null); // State for dropdown visibility
+  
  // State for medical history
 
  useEffect(() => {
@@ -119,7 +125,8 @@ const AdminDashboard = () => {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-        setAppointments(response.data); // Update appointments state
+        setAppointments(response.data);
+        console.log(response.data) // Update appointments state
       } catch (error) {
         console.error('Error fetching appointments:', error);
       }
@@ -210,60 +217,152 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // State for selected status
 
-  const renderAppointments = () => (
-    <div className="bg-white rounded-xl shadow-sm">
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Appointments</h3>
-        <div className="overflow-x-auto max-h-96 overflow-y-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Username
-                </th>
-               
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Appointment Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {appointments.map((appointment) => (
-                <tr key={appointment.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
-                  </td>
-                
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(appointment.appointment_date).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        appointment.status === 'completed'
-                          ? 'bg-green-100 text-green-800'
-                          : appointment.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : appointment.status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {appointment.status}
-                    </span>
-                  </td>
+  useEffect(() => {
+    const fetchFilteredAppointments = async (status: string | null) => {
+      try {
+        const endpoint = status
+          ? `/admin/appointments/status/${status}/`
+          : '/admin/appointments/';
+        const response = await api.get(endpoint, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setAppointments(response.data); // Update appointments state
+      } catch (error) {
+        console.error('Error fetching filtered appointments:', error);
+      }
+    };
+
+    fetchFilteredAppointments(selectedStatus); // Fetch appointments when the filter changes
+  }, [selectedStatus]);
+
+  const renderAppointments = () => {
+    return (
+      <div className="bg-white rounded-xl shadow-sm">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Appointments</h3>
+            <select
+              className="border border-gray-300 rounded-md px-4 py-2 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+              value={selectedStatus || ''}
+              onChange={(e) => setSelectedStatus(e.target.value || null)}
+            >
+              <option value="" className="text-gray-500">All Statuses</option>
+              <option value="completed" className="text-green-600 font-medium">Completed</option>
+              <option value="pending" className="text-yellow-600 font-medium">Pending</option>
+              <option value="confirmed" className="text-blue-600 font-medium">Confirmed</option>
+              <option value="finished" className="text-gray-600 font-medium">Finished</option>
+            </select>
+          </div>
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Username
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Appointment Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {appointments.map((appointment) => (
+                  <tr key={appointment.id}>
+                    
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(appointment.appointment_date).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          appointment.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : appointment.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : appointment.status === 'confirmed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {appointment.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="relative">
+                        <div className="relative group">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className="text-blue-600 hover:text-blue-900"
+                            onClick={() =>
+                              setDropdownVisible(
+                                dropdownVisible === appointment.id ? null : appointment.id
+                              )
+                            }
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          {dropdownVisible === appointment.id && (
+                            <select
+                              className="bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm text-gray-700"
+                              value={appointment.status}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                try {
+                                  await api.patch(`/admin/appointments/${appointment.id}/`, {
+                                    status: newStatus,
+                                  });
+                                  alert(`Status updated to ${newStatus}`);
+                                  setAppointments((prevAppointments) =>
+                                    prevAppointments.map((appt) =>
+                                      appt.id === appointment.id
+                                        ? {
+                                            ...appt,
+                                            status: newStatus as
+                                              | 'completed'
+                                              | 'pending'
+                                              | 'confirmed'
+                                              | 'finished',
+                                          }
+                                        : appt
+                                    )
+                                  );
+                                  setDropdownVisible(null); // Close the dropdown
+                                } catch (error) {
+                                  console.error('Error updating status:', error);
+                                  alert('Failed to update status. Please try again.');
+                                }
+                              }}
+                            >
+                              <option value="completed">Completed</option>
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="finished">Finished</option>
+                            </select>
+                          )}
+                        </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -436,6 +535,13 @@ const AdminDashboard = () => {
     </div>
   );
 
+
+  function renderScan() {
+    return (
+        <ScanUpload />
+      )
+  };
+
   const renderDoctors = () => (
     <div className="bg-white rounded-xl shadow-sm">
       <div className="p-6">
@@ -587,6 +693,7 @@ const AdminDashboard = () => {
                       </button>
                     
                     </td>
+                    
                   </tr>
                 ))}
             </tbody>
@@ -678,16 +785,39 @@ const AdminDashboard = () => {
   
           {/* Additional Actions Section */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-           
+            <button
+              className="px-4 py-2 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+              onClick={async () => {
+              try {
+                const response = await api.get(`/admin/history/user/${selectedUser?.id}/`, {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
+                });
+                alert(`Medical History: ${JSON.stringify(response.data, null, 2)}`);
+              } catch (error) {
+                console.error('Error fetching medical history:', error);
+                alert('Failed to fetch medical history. Please try again.');
+              }
+              }}
+            >
+              View Medical History
+            </button>
           {selectedUser?.premium_status && (
   <button
     className="px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors"
     onClick={async () => {
       if (window.confirm(`Are you sure you want to revoke premium access for ${selectedUser.username}?`)) {
         try {
-
-          await api.delete(
-            `/admin/premium/${selectedUser.id}/revoke/`,
+          // Send PATCH request to update the premium status
+          await api.patch(
+            `/admin/users/${selectedUser.id}/revoke/`,
+            { premium_status: false }, // Payload to update premum status
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+              },
+            }
           );
           alert('Premium access revoked successfully.');
           setSelectedUser({
@@ -703,8 +833,11 @@ const AdminDashboard = () => {
     }}
   >
     Revoke Premium Access
-  </button>
+  </button> 
+
+  
 )}
+
           </div>
         </div>
       ) : (
@@ -826,22 +959,23 @@ const AdminDashboard = () => {
               <p className="text-sm text-gray-500 mt-1">Manage and deploy your AI models</p>
             </div>
             <div>
-              <input
-              type="file"
-              id="modelFileInput"
-              accept=".h5,.keras"
-              style={{ display: 'none' }}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                const formData = new FormData();
-                formData.append('model_file', file);
-                formData.append('model_name', file.name);
+            <input
+  type="file"
+  id="modelFileInput"
+  accept=".h5,.keras"
+  style={{ display: 'none' }}
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('model_file', file);
+      formData.append('model_name', file.name);
 
                 try {
                   const response = await api.post('/admin/ai/upload/', formData, {
                   headers: {
                     'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                   },
                   });
                   alert('Model uploaded successfully.');
@@ -945,7 +1079,7 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900">Coupons</h3>
             <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-mdب hover:bg-blue-700 flex items-center gap-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-mdب hover:bg-blue-700 flex items-center gap-2 rounded-lg"
             onClick={async () => {
               const couponCode = prompt("Enter coupon code:");
               const validUntil = prompt("Enter valid until date (YYYY-MM-DD):");
@@ -1029,7 +1163,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+      <div className='h-8'></div>
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
@@ -1103,6 +1237,17 @@ const AdminDashboard = () => {
                   <span>Appointments</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('scaner')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'scaner'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <ScanBarcodeIcon className="h-5 w-5" />
+                  <span>scaner</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('reports')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
                     activeTab === 'reports'
@@ -1152,6 +1297,7 @@ const AdminDashboard = () => {
             {activeTab === 'coupons' && renderCoupons()}
             {activeTab === 'appointments' && renderAppointments()}
             {activeTab === 'medical-history' && renderMedicalHistory()}
+            {activeTab === 'scaner' && renderScan()}
         
           </div>
         </div>
