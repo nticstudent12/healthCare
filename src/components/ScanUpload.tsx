@@ -63,11 +63,7 @@ const ScanUpload = () => {
     }
   };
 
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+ 
 
   const resetUpload = () => {
     setSelectedFile(null);
@@ -115,7 +111,7 @@ const ScanUpload = () => {
                       htmlFor="file-upload"
                       className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                     >
-                      <span onClick={triggerFileInput}>Upload a file</span>
+                      <span>Upload a file</span>
                       <input
                         id="file-upload"
                         name="file-upload"
