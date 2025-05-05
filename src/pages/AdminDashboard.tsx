@@ -20,11 +20,14 @@ import {
   
   Plus,
   Edit,
+  
+  ScanBarcodeIcon,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useEffect, useState } from 'react';
 import api from '../utils/api/api';
+import ScanUpload from '../components/ScanUpload';
 interface MedicalHistoryRecord {
   id: number;
   user: number; // User ID associated with the record
@@ -72,7 +75,7 @@ interface AIModel {
 }
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'|'scaner'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
@@ -502,6 +505,13 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
+
+
+  function renderScan() {
+    return (
+        <ScanUpload />
+      )
+  };
 
   const renderDoctors = () => (
     <div className="bg-white rounded-xl shadow-sm">
@@ -1066,7 +1076,7 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900">Coupons</h3>
             <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-mdب hover:bg-blue-700 flex items-center gap-2"
+            className="px-4 py-2 bg-blue-600 text-white rounded-mdب hover:bg-blue-700 flex items-center gap-2 rounded-lg"
             onClick={async () => {
               const couponCode = prompt("Enter coupon code:");
               const validUntil = prompt("Enter valid until date (YYYY-MM-DD):");
@@ -1224,6 +1234,17 @@ const AdminDashboard = () => {
                   <span>Appointments</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('scaner')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'scaner'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <ScanBarcodeIcon className="h-5 w-5" />
+                  <span>scaner</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('reports')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
                     activeTab === 'reports'
@@ -1273,6 +1294,7 @@ const AdminDashboard = () => {
             {activeTab === 'coupons' && renderCoupons()}
             {activeTab === 'appointments' && renderAppointments()}
             {activeTab === 'medical-history' && renderMedicalHistory()}
+            {activeTab === 'scaner' && renderScan()}
         
           </div>
         </div>
