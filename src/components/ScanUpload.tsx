@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import api from '../utils/api/api';
 
 const ScanUpload = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error' | 'in progress'>('idle');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -12,7 +13,28 @@ const ScanUpload = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      
+      const SendScan = async () =>{
+        setUploadStatus('in progress');
+        const selectedModel = '2';
+        const formData = new FormData();
+        formData.append('scan', file);
+        formData.append('model_id', selectedModel);
+        try {
+          const response = await api.post('users/ai/infer/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          });
+          console.log('Scan uploaded successfully:', response.data);
+          setUploadStatus('success');
+          alert('Scan uploaded successfully.');
+        } catch (error) {
+          console.error('Error uploading scan:', error);
+          alert('Failed to upload the scan. Please try again.');
+        }
+      }
+      SendScan();
+
       // Create preview URL for image files
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();

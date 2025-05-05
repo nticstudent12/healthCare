@@ -796,7 +796,7 @@ const toggleSmsNotifications = () => {
                   }`}
                 >
                   <ScanBarcodeIcon className="h-5 w-5" />
-                  <span>Scaner</span>
+                  <span>Scanner</span>
                 </button>
 
                 <button

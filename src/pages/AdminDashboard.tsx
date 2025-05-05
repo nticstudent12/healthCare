@@ -70,6 +70,18 @@ interface AIModel {
   parameters: Record<string, unknown>;
 }
 
+interface Doctor {
+    first_name : string;
+    last_name : string;
+    specialty : string;
+    wilaya  : string;
+    license_number : string;
+    phone_number : string;
+    address : string;
+    email : string;
+    external_id : string;
+}
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +91,23 @@ const AdminDashboard = () => {
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
  // State for medical history
+
+ useEffect(() => {
+  const fetchDoctors = async () => {
+    try {
+      const response = await api.get('admin/list-doctors/');
+      setDoctors(response.data); // Update medical history state
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+  };
+
+  if (activeTab === 'doctors') {
+    fetchDoctors();
+  }
+}, [activeTab]);
 
 
 
@@ -452,34 +480,12 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[
-                {
-                  name: 'Dr. Sarah Johnson',
-                  specialty: 'Cardiology',
-                  status: 'Active',
-                  performance: '4.8',
-                  image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3'
-                },
-                {
-                  name: 'Dr. Michael Chen',
-                  specialty: 'Neurology',
-                  status: 'Pending',
-                  performance: 'N/A',
-                  image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3'
-                }
-              ].map((doctor, index) => (
+              {doctors.map((doctor, index) => (
                 <tr key={index}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0">
-                        <img
-                          className="h-10 w-10 rounded-full"
-                          src={doctor.image}
-                          alt={doctor.name}
-                        />
-                      </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{doctor.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{doctor.first_name + " " + doctor.last_name}</div>
                       </div>
                     </div>
                   </td>
@@ -487,16 +493,10 @@ const AdminDashboard = () => {
                     <div className="text-sm text-gray-900">{doctor.specialty}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      doctor.status === 'Active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {doctor.status}
-                    </span>
+                    
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {doctor.performance}
+                    {doctor.license_number}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button className="text-blue-600 hover:text-blue-900 mr-4">Edit</button>
@@ -685,15 +685,9 @@ const AdminDashboard = () => {
     onClick={async () => {
       if (window.confirm(`Are you sure you want to revoke premium access for ${selectedUser.username}?`)) {
         try {
-          // Send PATCH request to update the premium status
-          await api.patch(
-            `/admin/users/${selectedUser.id}/revoke/`,
-            { premium_status: false }, // Payload to update premum status
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-              },
-            }
+
+          await api.delete(
+            `/admin/premium/${selectedUser.id}/revoke/`,
           );
           alert('Premium access revoked successfully.');
           setSelectedUser({
@@ -848,7 +842,6 @@ const AdminDashboard = () => {
                   const response = await api.post('/admin/ai/upload/', formData, {
                   headers: {
                     'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                   },
                   });
                   alert('Model uploaded successfully.');

@@ -18,7 +18,7 @@ const LoginPage = () => {
     const saveUserData = async () => {
       if (userData) {
         console.log('userData updated:', userData);
-        await sessionStorage.setItem('userData', JSON.stringify(userData)); // technically no need for await here
+        await sessionStorage.setItem('userData', JSON.stringify(userData)); 
       }
     };
   
