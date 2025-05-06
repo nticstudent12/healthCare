@@ -108,7 +108,19 @@ const DashboardPage = () => {
 
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]);
 
-
+  const updateMedicalHistory = async () => {
+    try {
+      const response = await api.get('/users/history/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      setMedicalHistory(response.data);
+      console.log("medical:", response.data);
+    } catch (error) {
+      console.error('Error fetching medical history:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchMedicalHistory = async () => {
@@ -457,8 +469,13 @@ const toggleSmsNotifications = () => {
       </div>
     </div>
   );
-  const renderMedicalHistory = () => {
+  const wrappedrenderMedicalHistory = () => {
     console.log('Rendering Medical History:', medicalHistory); // Debugging
+    updateMedicalHistory();
+    return renderMedicalHistory();
+  }
+
+  const renderMedicalHistory = () => {
     return (
       <div className="bg-white rounded-xl shadow-sm">
         <div className="p-6">
@@ -776,7 +793,11 @@ const toggleSmsNotifications = () => {
                 </button>
                 
                 <button
-                  onClick={() => setActiveTab('records')}
+                  onClick={() =>{
+                    updateMedicalHistory
+                    setActiveTab('records')
+                  }
+                  }
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
                   activeTab === 'records'
                     ? 'bg-blue-50 text-blue-700'
@@ -833,7 +854,7 @@ const toggleSmsNotifications = () => {
           <div className="flex-1">
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'appointments' && renderAppointments()}
-            {activeTab === 'records' && renderMedicalHistory()}
+            {activeTab === 'records' &&  wrappedrenderMedicalHistory()}
             {activeTab === 'settings' && renderSettings()}
             {activeTab === 'support' && renderSupport()}
             {activeTab === 'scaner' && renderScan()}
