@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import api from '../utils/api/api';
 
 const ScanUpload = () => {
@@ -7,69 +7,62 @@ const ScanUpload = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error' | 'in progress'>('idle');
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // New state for loader
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showDoctorTable, setShowDoctorTable] = useState(false); // State to control table visibility
-
+  const [showDoctorTable, setShowDoctorTable] = useState(false);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-    const fetchDoctors = async () => {
-      try {
-        const response = await api.get('admin/list-doctors/');
-        setDoctors(response.data);
-        console.log(response.data); // Update medical history state
-      } catch (error) {
-        console.error('Error fetching doctors:', error);
-      }
-    };
 
-   
- 
-  
-  
-  
-interface Doctor {
-  first_name : string;
-  last_name : string;
-  specialty : string;
-  wilaya  : string;
-  license_number : string;
-  phone_number : string;
-  address : string;
-  email : string;
-  external_id : string;
+  interface Doctor {
+    first_name : string;
+    last_name : string;
+    specialty : string;
+    wilaya  : string;
+    license_number : string;
+    phone_number : string;
+    status : string;
+    address : string;
+    email : string;
+    external_id : string;
 }
 
-const handleShowDoctors = async () => {
-  await fetchDoctors(); // Fetch doctor data
-  setShowDoctorTable(true); // Show the table
-};
+  const fetchDoctors = async () => {
+    try {
+      const response = await api.get('admin/list-doctors/');
+      setDoctors(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      const SendScan = async () =>{
+      const SendScan = async () => {
         setUploadStatus('in progress');
+        setIsLoading(true); // Show loader
         const selectedModel = '2';
         const formData = new FormData();
         formData.append('scan', file);
         formData.append('model_id', selectedModel);
         try {
           const response = await api.post('users/ai/infer/', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
           });
           console.log('Scan uploaded successfully:', response.data);
           setUploadStatus('success');
-          alert('Scan uploaded successfully.');
         } catch (error) {
           console.error('Error uploading scan:', error);
-          alert('Failed to upload the scan. Please try again.');
+          setUploadStatus('error');
+        } finally {
+          setIsLoading(false); // Hide loader
         }
-      }
+      };
       SendScan();
 
-      // Create preview URL for image files
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = () => {
@@ -79,9 +72,6 @@ const handleShowDoctors = async () => {
       } else {
         setPreviewUrl(null);
       }
-      
-      // Simulate upload success
-      setUploadStatus('success');
     }
   };
 
@@ -129,9 +119,14 @@ const handleShowDoctors = async () => {
     }
   };
 
+  const handleShowDoctors = async () => {
+    await fetchDoctors(); // Fetch doctor data
+    setShowDoctorTable(true); // Show the table
+  };
+
   return (<>
-    <section id="scan-upload" className="py-16 bg-slate-100 borrder rounded-xl  " >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
+    <section id="scan-upload" className="py-16 bg-slate-100 border rounded-xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Upload Your Medical Scans
@@ -185,7 +180,12 @@ const handleShowDoctors = async () => {
                 </>
               ) : (
                 <div className="py-4">
-                  {uploadStatus === 'success' && (
+                  {isLoading ? (
+                    <div className="flex flex-col items-center">
+                      <Loader className="h-12 w-12 text-blue-500 animate-spin mb-4" />
+                      <p className="text-sm font-medium text-gray-900">Uploading your scan...</p>
+                    </div>
+                  ) : uploadStatus === 'success' ? (
                     <div className="flex flex-col items-center">
                       <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                       <p className="text-sm font-medium text-gray-900">File uploaded successfully!</p>
@@ -216,9 +216,7 @@ const handleShowDoctors = async () => {
                       </div>
 
                     </div>
-                  )}
-                  
-                  {uploadStatus === 'error' && (
+                  ) : uploadStatus === 'error' ? (
                     <div className="flex flex-col items-center">
                       <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
                       <p className="text-sm font-medium text-gray-900">Upload failed. Please try again.</p>
@@ -233,7 +231,7 @@ const handleShowDoctors = async () => {
 
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
 

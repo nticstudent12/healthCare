@@ -82,9 +82,21 @@ interface Doctor {
     wilaya  : string;
     license_number : string;
     phone_number : string;
+    status : string;
     address : string;
     email : string;
     external_id : string;
+}
+
+const SyncDatabase = async () => {
+  try {
+    const response = await api.post('admin/sync-doctors/');
+    console.log('Database synced successfully:', response.data);
+    alert('Database synced successfully!');
+  } catch (error) {
+    console.error('Error syncing database:', error);
+    alert('Failed to sync database. Please try again.');
+  }
 }
 
 const AdminDashboard = () => {
@@ -98,7 +110,7 @@ const AdminDashboard = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
   const [doctors, setDoctors] = useState<Doctor[]>([]); // State for doctors
   const [dropdownVisible, setDropdownVisible] = useState<number | null>(null); // State for dropdown visibility
-  
+
  // State for medical history
 
  useEffect(() => {
@@ -560,7 +572,9 @@ const AdminDashboard = () => {
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              onClick={() => SyncDatabase()}
+            >
               Sync with Database
             </button>
           </div>
