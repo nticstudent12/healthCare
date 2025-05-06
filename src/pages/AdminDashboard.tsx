@@ -111,7 +111,7 @@ const AdminDashboard = () => {
     }
   };
 
-  if (activeTab === 'doctors') {
+  if (activeTab === 'doctors' || activeTab === 'overview') {
     fetchDoctors();
   }
 }, [activeTab]);
@@ -419,6 +419,7 @@ const AdminDashboard = () => {
   }, [activeTab]);
 
   const renderOverview = () => (
+    
     <div className="space-y-6">
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -436,7 +437,7 @@ const AdminDashboard = () => {
             <User className="h-8 w-8 text-green-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Active Doctors</p>
-              <p className="text-2xl font-semibold text-gray-900">48</p>
+              <p className="text-2xl font-semibold text-gray-900">{doctors.length}</p>
             </div>
           </div>
         </div>
@@ -445,7 +446,7 @@ const AdminDashboard = () => {
             <FileText className="h-8 w-8 text-amber-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Pending Reports</p>
-              <p className="text-2xl font-semibold text-gray-900">13</p>
+              <p className="text-2xl font-semibold text-gray-900">{medicalHistory.length}</p>
             </div>
           </div>
         </div>
