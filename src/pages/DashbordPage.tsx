@@ -724,10 +724,10 @@ const toggleSmsNotifications = () => {
       <Navbar />
       <div className='h-8'></div>
       
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row gap-8">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 ">
+        <div className="flex flex-col md:flex-row gap-8 ">
           {/* Sidebar */}
-          <div className="w-full md:w-64 flex-shrink-0">
+          <div className="w-full md:w-64 ">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center space-x-4 mb-6">
             <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -750,13 +750,13 @@ const toggleSmsNotifications = () => {
             </div>
           </div>
               
-              <nav className="space-y-2">
+                <nav className="space-y-2 ">
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'overview'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'overview'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <User className="h-5 w-5" />
@@ -766,9 +766,9 @@ const toggleSmsNotifications = () => {
                 <button
                   onClick={() => setActiveTab('appointments')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'appointments'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'appointments'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <Calendar className="h-5 w-5" />
@@ -778,9 +778,9 @@ const toggleSmsNotifications = () => {
                 <button
                   onClick={() => setActiveTab('records')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'records'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'records'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <FileText className="h-5 w-5" />
@@ -790,9 +790,9 @@ const toggleSmsNotifications = () => {
                 <button
                   onClick={() => setActiveTab('settings')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'settings'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'settings'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <Settings className="h-5 w-5" />
@@ -802,9 +802,9 @@ const toggleSmsNotifications = () => {
                 <button
                   onClick={() => setActiveTab('scaner')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'scaner'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'scaner'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <ScanBarcodeIcon className="h-5 w-5" />
@@ -814,9 +814,9 @@ const toggleSmsNotifications = () => {
                 <button
                   onClick={() => setActiveTab('support')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
-                    activeTab === 'support'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'support'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <MessageSquare className="h-5 w-5" />
@@ -825,7 +825,7 @@ const toggleSmsNotifications = () => {
                 </button>
 
                 
-              </nav>
+                </nav>
             </div>
           </div>
 

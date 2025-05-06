@@ -8,6 +8,40 @@ const ScanUpload = () => {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error' | 'in progress'>('idle');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showDoctorTable, setShowDoctorTable] = useState(false); // State to control table visibility
+
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const fetchDoctors = async () => {
+      try {
+        const response = await api.get('admin/list-doctors/');
+        setDoctors(response.data);
+        console.log(response.data); // Update medical history state
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+      }
+    };
+
+   
+ 
+  
+  
+  
+interface Doctor {
+  first_name : string;
+  last_name : string;
+  specialty : string;
+  wilaya  : string;
+  license_number : string;
+  phone_number : string;
+  address : string;
+  email : string;
+  external_id : string;
+}
+
+const handleShowDoctors = async () => {
+  await fetchDoctors(); // Fetch doctor data
+  setShowDoctorTable(true); // Show the table
+};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -85,7 +119,6 @@ const ScanUpload = () => {
     }
   };
 
- 
 
   const resetUpload = () => {
     setSelectedFile(null);
@@ -96,7 +129,7 @@ const ScanUpload = () => {
     }
   };
 
-  return (
+  return (<>
     <section id="scan-upload" className="py-16 bg-slate-100 borrder rounded-xl  " >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
         <div className="text-center mb-10">
@@ -179,8 +212,9 @@ const ScanUpload = () => {
                         >
                           Upload Another File
                         </button>
-                        <button  className=" items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ml-2" >show avilable doctors</button>
+                        <button  className=" items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ml-2" onClick={() => handleShowDoctors()} >show avilable doctors</button>
                       </div>
+
                     </div>
                   )}
                   
@@ -196,54 +230,49 @@ const ScanUpload = () => {
                         >
                           Try Again
                         </button>
+
                       </div>
                     </div>
                   )}
                 </div>
               )}
-            </div>
-          </div>
-          
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3" data-aos="fade-up" data-aos-delay="200">
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 rounded-md p-2">
-                  <Upload className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Secure Upload</h3>
-                  <p className="text-sm text-gray-500">Your files are encrypted and secure</p>
-                </div>
-              </div>
+
             </div>
             
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 rounded-md p-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Multiple Formats</h3>
-                  <p className="text-sm text-gray-500">Support for various image formats</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-blue-100 rounded-md p-2">
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Quick Analysis</h3>
-                  <p className="text-sm text-gray-500">Fast review by medical professionals</p>
-                </div>
-              </div>
-            </div>
           </div>
+      
         </div>
       </div>
+      
     </section>
+    <section className='py-16 bg-slate-100 borrder rounded-xl '>
+    {showDoctorTable && (<tbody className="divide-y divide-gray-200">
+      {
+        doctors.map((doctor, index) => (
+          <tr key={index}>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="flex items-center">
+                <div className="ml-4">
+                  <div className="text-sm font-medium text-gray-900">
+                    {doctor.first_name + " " + doctor.last_name}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm text-gray-900">{doctor.specialty}</div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap"></td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {doctor.license_number}
+            </td>
+          
+          </tr>
+        ))}
+    </tbody>)}
+    </section>
+    </>
+    
   );
 };
 
