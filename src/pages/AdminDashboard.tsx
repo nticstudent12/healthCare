@@ -22,6 +22,7 @@ import {
   Edit,
   
   ScanBarcodeIcon,
+  
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -122,7 +123,7 @@ const AdminDashboard = () => {
     }
   };
 
-  if (activeTab === 'doctors') {
+  if (activeTab === 'doctors' || activeTab === 'overview') {
     fetchDoctors();
   }
 }, [activeTab]);
@@ -430,6 +431,7 @@ const AdminDashboard = () => {
   }, [activeTab]);
 
   const renderOverview = () => (
+    
     <div className="space-y-6">
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -447,7 +449,7 @@ const AdminDashboard = () => {
             <User className="h-8 w-8 text-green-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Active Doctors</p>
-              <p className="text-2xl font-semibold text-gray-900">48</p>
+              <p className="text-2xl font-semibold text-gray-900">{doctors.length}</p>
             </div>
           </div>
         </div>
@@ -456,7 +458,7 @@ const AdminDashboard = () => {
             <FileText className="h-8 w-8 text-amber-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Pending Reports</p>
-              <p className="text-2xl font-semibold text-gray-900">13</p>
+              <p className="text-2xl font-semibold text-gray-900">{medicalHistory.length}</p>
             </div>
           </div>
         </div>
@@ -594,9 +596,7 @@ const AdminDashboard = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Performance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+               
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -618,10 +618,7 @@ const AdminDashboard = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {doctor.license_number}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-4">Edit</button>
-                   
-                  </td>
+
                 </tr>
               ))}
             </tbody>
@@ -1012,29 +1009,29 @@ const AdminDashboard = () => {
             </div>
           </div>
   
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {aiModels.map((model) => (
               <div 
-                key={model.id} 
-                className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow duration-200 bg-white"
+              key={model.id} 
+              className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow duration-200 bg-white"
               >
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <Brain className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-gray-900">{model.model_name}</h4>
-                  </div>
-                  <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    model.status === 'deployed'
-                      ? 'bg-green-100 text-green-800'
-                      : model.status === 'training'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {model.status}
-                  </div>
+              <div className="flex flex-col gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Brain className="h-5 w-5 text-blue-600" />
                 </div>
+                <h4 className="text-lg font-semibold text-gray-900 truncate">{model.model_name}</h4>
+                </div>
+                <div className={`px-2.5 py-1 rounded-full text-xs font-medium self-start ${
+                model.status === 'deployed'
+                  ? 'bg-green-100 text-green-800'
+                  : model.status === 'training'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-gray-100 text-gray-800'
+                }`}>
+                {model.status}
+                </div>
+              </div>
   
                 <div className="space-y-3 mt-4">
                   <div className="flex items-center text-sm text-gray-600">
@@ -1077,8 +1074,9 @@ const AdminDashboard = () => {
                     >
                       Delete
                     </button>
+                    
                     )}
-                </div>
+                    <button className='px-3 py-1.5 text-base text-blue-600 border border-blue-600 hover:bg-green-50 rounded-md transition-colors'>Edit</button></div>
               </div>
             ))}
           </div>
@@ -1093,7 +1091,7 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900">Coupons</h3>
             <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-mdب hover:bg-blue-700 flex items-center gap-2 rounded-lg"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 rounded-lg"
             onClick={async () => {
               const couponCode = prompt("Enter coupon code:");
               const validUntil = prompt("Enter valid until date (YYYY-MM-DD):");
@@ -1123,6 +1121,7 @@ const AdminDashboard = () => {
                 }
                 );
                 alert('Coupon created successfully.');
+                
                 setCoupons((prevCoupons) => [...prevCoupons, response.data]);
               } catch (error) {
                 console.error('Error creating coupon:', error);

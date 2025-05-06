@@ -1,68 +1,98 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../utils/api/api';
 
-const ScanUpload = () => {
+const ScanUploaduser = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error' | 'in progress'>('idle');
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // New state for loader
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showDoctorTable, setShowDoctorTable] = useState(false);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [showDoctorTable, setShowDoctorTable] = useState(false); // State to control table visibility
 
-  interface Doctor {
-    first_name : string;
-    last_name : string;
-    specialty : string;
-    wilaya  : string;
-    license_number : string;
-    phone_number : string;
-    status : string;
-    address : string;
-    email : string;
-    external_id : string;
-}
 
-  const fetchDoctors = async () => {
+  interface AIModel {
+    id: number;
+    model_name: string;
+    created_at: string;
+    status: string;
+    parameters: Record<string, unknown>;
+  }
+   const [aiModels, setAIModels] = useState<AIModel[]>([]);
+   
+   const fetchAIModels = async () => {
     try {
-      const response = await api.get('admin/list-doctors/');
-      setDoctors(response.data);
-      console.log(response.data);
+      const response = await api.get('users/ai/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      setAIModels(response.data); // Update AI models state
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error('Error fetching AI models:', error);
     }
   };
+  fetchAIModels();
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const fetchDoctors = async () => {
+      try {
+        const response = await api.get('admin/list-doctors/');
+        setDoctors(response.data);
+        console.log(response.data); // Update medical history state
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+      }
+    };
+
+   
+ 
+  
+  
+  
+interface Doctor {
+  first_name : string;
+  last_name : string;
+  specialty : string;
+  wilaya  : string;
+  license_number : string;
+  phone_number : string;
+  address : string;
+  email : string;
+  external_id : string;
+}
+
+const handleShowDoctors = async () => {
+  await fetchDoctors(); // Fetch doctor data
+  setShowDoctorTable(true); // Show the table
+};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      const SendScan = async () => {
+      const SendScan = async () =>{
         setUploadStatus('in progress');
-        setIsLoading(true); // Show loader
         const selectedModel = '2';
         const formData = new FormData();
         formData.append('scan', file);
         formData.append('model_id', selectedModel);
         try {
           const response = await api.post('users/ai/infer/', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
           });
           console.log('Scan uploaded successfully:', response.data);
           setUploadStatus('success');
+          alert('Scan uploaded successfully.');
         } catch (error) {
           console.error('Error uploading scan:', error);
-          setUploadStatus('error');
-        } finally {
-          setIsLoading(false); // Hide loader
+          alert('Failed to upload the scan. Please try again.');
         }
-      };
+      }
       SendScan();
 
+      // Create preview URL for image files
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = () => {
@@ -72,6 +102,9 @@ const ScanUpload = () => {
       } else {
         setPreviewUrl(null);
       }
+      
+      // Simulate upload success
+      setUploadStatus('success');
     }
   };
 
@@ -119,14 +152,9 @@ const ScanUpload = () => {
     }
   };
 
-  const handleShowDoctors = async () => {
-    await fetchDoctors(); // Fetch doctor data
-    setShowDoctorTable(true); // Show the table
-  };
-
   return (<>
-    <section id="scan-upload" className="py-16 bg-slate-100 border rounded-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="scan-upload" className="py-16 bg-slate-100 borrder rounded-xl  " >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Upload Your Medical Scans
@@ -146,7 +174,7 @@ const ScanUpload = () => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            data-aos="zoom-in"
+            
             
           >
             <div className="space-y-1 text-center">
@@ -180,12 +208,7 @@ const ScanUpload = () => {
                 </>
               ) : (
                 <div className="py-4">
-                  {isLoading ? (
-                    <div className="flex flex-col items-center">
-                      <Loader className="h-12 w-12 text-blue-500 animate-spin mb-4" />
-                      <p className="text-sm font-medium text-gray-900">Uploading your scan...</p>
-                    </div>
-                  ) : uploadStatus === 'success' ? (
+                  {uploadStatus === 'success' && (
                     <div className="flex flex-col items-center">
                       <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                       <p className="text-sm font-medium text-gray-900">File uploaded successfully!</p>
@@ -203,8 +226,7 @@ const ScanUpload = () => {
                           />
                         </div>
                       )}
-                      
-                      <div className="mt-6">
+                      <div className="mt-6 flex items-center space-x-2">
                         <button
                           type="button"
                           onClick={resetUpload}
@@ -212,11 +234,33 @@ const ScanUpload = () => {
                         >
                           Upload Another File
                         </button>
-                        <button  className=" items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ml-2" onClick={() => handleShowDoctors()} >show avilable doctors</button>
+                        <button
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          onClick={() => handleShowDoctors()}
+                        >
+                          Show Available Doctors
+                        </button>
+                        <div className="flex items-center space-x-2">
+                         
+                          <select
+                            id="ai-model"
+                            name="ai-model"
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-center"
+                            onChange={(e) => console.log(`Selected AI Model: ${e.target.value}`)} // Replace with actual logic
+                          >
+                            {aiModels.map((model) => (
+                              <option key={model.id} value={model.id} className="bg-white text-black">
+                                {model.model_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
                     </div>
-                  ) : uploadStatus === 'error' ? (
+                  )}
+                  
+                  {uploadStatus === 'error' && (
                     <div className="flex flex-col items-center">
                       <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
                       <p className="text-sm font-medium text-gray-900">Upload failed. Please try again.</p>
@@ -231,7 +275,7 @@ const ScanUpload = () => {
 
                       </div>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               )}
 
@@ -299,4 +343,4 @@ const ScanUpload = () => {
   );
 };
 
-export default ScanUpload;
+export default ScanUploaduser;

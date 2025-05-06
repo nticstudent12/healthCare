@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, User, Lock, Eye, EyeOff , Twitter, Facebook} from 'lucide-react';
+import { Heart, User, Lock, Eye, EyeOff , Twitter, Facebook, CheckCircle } from 'lucide-react';
 import authService from '../utils/api/auth';
 import api from '../utils/api/api'; // Fixed import path
 
@@ -12,6 +12,7 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false); // State to control success message visibility
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -29,6 +30,7 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setShowSuccess(false); // Reset success message visibility
 
     try {
       const { access, refresh } = await authService.login(username, password);
@@ -57,11 +59,16 @@ const LoginPage = () => {
           }
         };
         
-      fetchUserData();
+      await fetchUserData();
       
       const decoded = authService.decodeToken(access);
       console.log('Logged in user:', decoded);
-      navigate('/');
+
+      // Show success message and redirect after a delay
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/');
+      }, 2000); // Redirect after 2 seconds
     } catch (err) {
       setError('Invalid username or password');
       console.error('Login error:', err);
@@ -71,6 +78,17 @@ const LoginPage = () => {
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-x-hidden">
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-sm mx-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              <p className="text-green-600 font-medium">Login successful! Redirecting...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Heart className="h-12 w-12 text-blue-600" />

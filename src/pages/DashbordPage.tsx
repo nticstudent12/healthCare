@@ -17,7 +17,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useState, useEffect } from 'react';
 import api from '../utils/api/api'; // Fixed import path
-import ScanUpload from '../components/ScanUpload';
+
+import ScanUploaduser from '../components/ScanUploadUser';
 
 type Appointment = {
   id: number;
@@ -731,7 +732,7 @@ const toggleSmsNotifications = () => {
 
   function renderScan() {
     return (
-        <ScanUpload />
+        <ScanUploaduser />
       )
   };
 
