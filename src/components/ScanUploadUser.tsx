@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../utils/api/api';
 
-const ScanUpload = () => {
+const ScanUploaduser = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error' | 'in progress'>('idle');
@@ -10,6 +10,29 @@ const ScanUpload = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showDoctorTable, setShowDoctorTable] = useState(false); // State to control table visibility
 
+
+  interface AIModel {
+    id: number;
+    model_name: string;
+    created_at: string;
+    status: string;
+    parameters: Record<string, unknown>;
+  }
+   const [aiModels, setAIModels] = useState<AIModel[]>([]);
+   
+   const fetchAIModels = async () => {
+    try {
+      const response = await api.get('users/ai/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      setAIModels(response.data); // Update AI models state
+    } catch (error) {
+      console.error('Error fetching AI models:', error);
+    }
+  };
+  fetchAIModels();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
     const fetchDoctors = async () => {
       try {
@@ -151,7 +174,7 @@ const handleShowDoctors = async () => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            data-aos="zoom-in"
+            
             
           >
             <div className="space-y-1 text-center">
@@ -203,8 +226,7 @@ const handleShowDoctors = async () => {
                           />
                         </div>
                       )}
-                      
-                      <div className="mt-6">
+                      <div className="mt-6 flex items-center space-x-2">
                         <button
                           type="button"
                           onClick={resetUpload}
@@ -212,7 +234,27 @@ const handleShowDoctors = async () => {
                         >
                           Upload Another File
                         </button>
-                        <button  className=" items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ml-2" onClick={() => handleShowDoctors()} >show avilable doctors</button>
+                        <button
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          onClick={() => handleShowDoctors()}
+                        >
+                          Show Available Doctors
+                        </button>
+                        <div className="flex items-center space-x-2">
+                         
+                          <select
+                            id="ai-model"
+                            name="ai-model"
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-center"
+                            onChange={(e) => console.log(`Selected AI Model: ${e.target.value}`)} // Replace with actual logic
+                          >
+                            {aiModels.map((model) => (
+                              <option key={model.id} value={model.id} className="bg-white text-black">
+                                {model.model_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
                     </div>
@@ -301,4 +343,4 @@ const handleShowDoctors = async () => {
   );
 };
 
-export default ScanUpload;
+export default ScanUploaduser;
