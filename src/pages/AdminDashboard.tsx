@@ -88,16 +88,6 @@ interface Doctor {
     external_id : string;
 }
 
-const SyncDatabase = async () => {
-  try {
-    const response = await api.post('admin/sync-doctors/');
-    console.log('Database synced successfully:', response.data);
-    alert('Database synced successfully!');
-  } catch (error) {
-    console.error('Error syncing database:', error);
-    alert('Failed to sync database. Please try again.');
-  }
-}
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'|'scaner'>('overview');
@@ -118,6 +108,7 @@ const AdminDashboard = () => {
     try {
       const response = await api.get('admin/list-doctors/');
       setDoctors(response.data); // Update medical history state
+      console.log(response.data)
     } catch (error) {
       console.error('Error fetching doctors:', error);
     }
@@ -128,7 +119,24 @@ const AdminDashboard = () => {
   }
 }, [activeTab]);
 
-
+const SyncDatabase = async () => {
+  try {
+    const response = await api.post('admin/sync-doctors/');
+    console.log('Database synced successfully:', response.data);
+    try {
+      const response = await api.get('admin/list-doctors/');
+      setDoctors(response.data); // Update medical history state
+      console.log(response.data)
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+    alert('Database synced successfully!');
+  } catch (error) {
+    console.error('Error syncing database:', error);
+    alert('Failed to sync database. Please try again.');
+  }
+  
+}
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -613,7 +621,17 @@ const AdminDashboard = () => {
                     <div className="text-sm text-gray-900">{doctor.specialty}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      (doctor.status) === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : (doctor.status || 'inactive') === 'inactive'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {(doctor.status || 'inactive').charAt(0).toUpperCase() + (doctor.status || 'inactive').slice(1)}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {doctor.license_number}
@@ -628,7 +646,7 @@ const AdminDashboard = () => {
     </div>
   );
   const renderUsers = () => (
-    <div className="bg-white rounded-xl shadow-sm">
+    <div className="bg-w</span>hite rounded-xl shadow-sm">
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
