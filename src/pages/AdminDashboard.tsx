@@ -466,7 +466,7 @@ const SyncDatabase = async () => {
             <FileText className="h-8 w-8 text-amber-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Pending Reports</p>
-              <p className="text-2xl font-semibold text-gray-900">{medicalHistory.length}</p>
+              <p className="text-2xl font-semibold text-gray-900">2</p>
             </div>
           </div>
         </div>
@@ -1043,9 +1043,11 @@ const SyncDatabase = async () => {
                 <div className={`px-2.5 py-1 rounded-full text-xs font-medium self-start ${
                 model.status === 'deployed'
                   ? 'bg-green-100 text-green-800'
-                  : model.status === 'training'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-gray-100 text-gray-800'
+                  : model.status === 'archived'
+                  ? 'bg-gray-100 text-gray-800'
+                  : model.status === 'vip'
+                  ? 'bg-purple-100 text-red-800'
+                  : ''
                 }`}>
                 {model.status}
                 </div>
@@ -1065,36 +1067,60 @@ const SyncDatabase = async () => {
                 </div>
   
                 <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-2">
-                  
-                    {model.status === 'deployed' && (
+                
                     <button
                       className="px-3 py-1.5 text-base text-red-600 border border-red-600 hover:bg-green-50 rounded-md transition-colors"
                       onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete the AI model "${model.model_name}"?`)) {
-                        api
-                        .delete(`/admin/ai/${model.id}/`, {
-                          headers: {
-                          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                          },
-                        })
-                        .then(() => {
-                          alert('AI model deleted successfully.');
-                          setAIModels((prevModels) =>
-                          prevModels.filter((m) => m.id !== model.id)
-                          );
-                        })
-                        .catch((error) => {
-                          console.error('Error deleting AI model:', error);
-                          alert('Failed to delete the AI model. Please try again.');
-                        });
-                      }
+                        if (window.confirm(`Are you sure you want to delete the AI model "${model.model_name}"?`)) {
+                          api
+                            .delete(`/admin/ai/${model.id}/`, {
+                              headers: {
+                                Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                              },
+                            })
+                            .then(() => {
+                              alert('AI model deleted successfully.');
+                              setAIModels((prevModels) =>
+                                prevModels.filter((m) => m.id !== model.id)
+                              );
+                            })
+                            .catch((error) => {
+                              console.error('Error deleting AI model:', error);
+                              alert('Failed to delete the AI model. Please try again.');
+                            });
+                        }
                       }}
                     >
                       Delete
                     </button>
-                    
-                    )}
-                    <button className='px-3 py-1.5 text-base text-blue-600 border border-blue-600 hover:bg-green-50 rounded-md transition-colors'>Edit</button></div>
+                  <select
+                  className="px-3 py-1.5 text-base text-blue-600 border border-blue-600 rounded-md transition-colors"
+                  value={model.status}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    try {
+                    await api.patch(`/admin/ai/${model.id}/`, { status: newStatus }, {
+                      headers: {
+                      Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                      },
+                    });
+                    alert(`AI Model status updated to ${newStatus}`);
+                    setAIModels((prevModels) =>
+                      prevModels.map((m) =>
+                      m.id === model.id ? { ...m, status: newStatus } : m
+                      )
+                    );
+                    } catch (error) {
+                    console.error('Error updating AI model status:', error);
+                    alert('Failed to update status. Please try again.');
+                    }
+                  }}
+                  >
+                  <option value="archived" className='text-gray-800-800'>Archived</option>
+                  <option value="deployed" className='text-green-800'>Deployed</option>
+                  <option value="vip" className='text-red-800'>VIP</option>
+                  </select>
+                </div>
               </div>
             ))}
           </div>
