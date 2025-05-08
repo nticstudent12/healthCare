@@ -112,9 +112,6 @@ const DashboardPage = () => {
   const updateMedicalHistory = async () => {
     try {
       const response = await api.get('/users/history/', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
       });
       setMedicalHistory(response.data);
       console.log("medical:", response.data);
@@ -138,9 +135,24 @@ const DashboardPage = () => {
       }
     };
 
-    fetchMedicalHistory();
+    if (activeTab === 'records') {
+      fetchMedicalHistory();
+    }
   }, [activeTab === 'medical-history']);
 
+  useEffect(() => {
+    if (activeTab === 'records') {
+      updateMedicalHistory();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'overview' || activeTab === 'records') {
+      updateMedicalHistory();
+    }
+  }, [activeTab]);
+
+  
 
   // Fetch appointments data when component mounts
   useEffect(() => {
@@ -470,11 +482,7 @@ const toggleSmsNotifications = () => {
       </div>
     </div>
   );
-  const wrappedrenderMedicalHistory = () => {
-    console.log('Rendering Medical History:', medicalHistory); // Debugging
-    updateMedicalHistory();
-    return renderMedicalHistory();
-  }
+
 
   const renderMedicalHistory = () => {
     return (
@@ -855,7 +863,7 @@ const toggleSmsNotifications = () => {
           <div className="flex-1">
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'appointments' && renderAppointments()}
-            {activeTab === 'records' &&  wrappedrenderMedicalHistory()}
+            {activeTab === 'records' &&  renderMedicalHistory()}
             {activeTab === 'settings' && renderSettings()}
             {activeTab === 'support' && renderSupport()}
             {activeTab === 'scaner' && renderScan()}

@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../utils/api/api';
+import { send } from 'process';
 
 const ScanUploaduser = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -9,6 +10,7 @@ const ScanUploaduser = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showDoctorTable, setShowDoctorTable] = useState(false); // State to control table visibility
+  const [selectedModel, setSelectedModel] = useState(''); // State to store selected model ID
 
 
   interface AIModel {
@@ -20,19 +22,20 @@ const ScanUploaduser = () => {
   }
    const [aiModels, setAIModels] = useState<AIModel[]>([]);
    
-   const fetchAIModels = async () => {
-    try {
-      const response = await api.get('users/ai/', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      setAIModels(response.data); // Update AI models state
-    } catch (error) {
-      console.error('Error fetching AI models:', error);
-    }
-  };
-  fetchAIModels();
+   useEffect(() => {
+    const fetchAIModels = async () => {
+      try {
+        const response = await api.get('users/ai/', {
+        });
+        setAIModels(response.data); // Update AI models state
+      } catch (error) {
+        console.error('Error fetching AI models:', error);
+      }
+    };
+    fetchAIModels();
+  }
+  , []); // Empty dependency array to run only once on mount
+
   const [doctors, setDoctors] = useState<Doctor[]>([]);
     const fetchDoctors = async () => {
       try {
@@ -43,6 +46,7 @@ const ScanUploaduser = () => {
         console.error('Error fetching doctors:', error);
       }
     };
+
 
    
  
@@ -68,31 +72,10 @@ const handleShowDoctors = async () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+      const  file = e.target.files[0];
       setSelectedFile(file);
-      const SendScan = async () =>{
-        setUploadStatus('in progress');
-        const selectedModel = '2';
-        const formData = new FormData();
-        formData.append('scan', file);
-        formData.append('model_id', selectedModel);
-        try {
-          const response = await api.post('users/ai/infer/', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          });
-          console.log('Scan uploaded successfully:', response.data);
-          setUploadStatus('success');
-          alert('Scan uploaded successfully.');
-        } catch (error) {
-          console.error('Error uploading scan:', error);
-          alert('Failed to upload the scan. Please try again.');
-        }
-      }
-      SendScan();
-
-      // Create preview URL for image files
+      setUploadStatus('in progress'); // Set upload status to in progress
+       // Create preview URL for image files
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = () => {
@@ -112,7 +95,37 @@ const handleShowDoctors = async () => {
     e.preventDefault();
     setIsDragging(true);
   };
-
+  const SendScan = async () => {
+    if (!selectedModel) {
+      alert('Please select an AI model before uploading.');
+      return;
+    }
+  
+    if (!selectedFile) {
+      alert('Please upload a file before submitting.');
+      return;
+    }
+  
+    setUploadStatus('in progress');
+    const formData = new FormData();
+    formData.append('scan', selectedFile as Blob);
+    formData.append('model_id', selectedModel);
+  
+    try {
+      const response = await api.post('users/ai/infer/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('Scan uploaded successfully:', response.data);
+      setUploadStatus('success');
+      alert('Scan uploaded successfully.');
+    } catch (error) {
+      console.error('Error uploading scan:', error);
+      setUploadStatus('error');
+      alert('Failed to upload the scan. Please try again.');
+    }
+  };
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
@@ -229,7 +242,7 @@ const handleShowDoctors = async () => {
                       <div className="mt-6 flex items-center space-x-2">
                         <button
                           type="button"
-                          onClick={resetUpload}
+                          onClick={SendScan}
                           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                           Upload Another File
@@ -246,8 +259,16 @@ const handleShowDoctors = async () => {
                             id="ai-model"
                             name="ai-model"
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-center"
-                            onChange={(e) => console.log(`Selected AI Model: ${e.target.value}`)} // Replace with actual logic
+                            value={selectedModel} // Bind the state to the dropdown
+                            onChange={(e) => {
+                              const selectedValue = e.target.value;
+                              setSelectedModel(selectedValue); // Update the state
+                              console.log(`Selected AI Model: ${selectedValue}`); // Debugging log
+                            }}
                           >
+                            <option value="" disabled>
+                              Select a model
+                            </option>
                             {aiModels.map((model) => (
                               <option key={model.id} value={model.id} className="bg-white text-black">
                                 {model.model_name}

@@ -819,9 +819,6 @@ const SyncDatabase = async () => {
               onClick={async () => {
               try {
                 const response = await api.get(`/admin/history/user/${selectedUser?.id}/`, {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                },
                 });
                 alert(`Medical History: ${JSON.stringify(response.data, null, 2)}`);
               } catch (error) {
