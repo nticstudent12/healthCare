@@ -1,25 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Menu, X, LogIn, Crown, User } from 'lucide-react';
+import { Heart, Menu, X, LogIn, Crown, User, Bell } from 'lucide-react';
+import api from '../utils/api/api'; // Adjust the import path as necessary
+
+interface Notification {
+  id: number;
+  notification_type: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+  user: number;
+}
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [loggedin, setLoggedin] = useState(false);
-  const [isPremium, setIsPremium] = useState(false); // New state for premium status
+  const [isPremium, setIsPremium] = useState(false);
   const [signtext, setSigntext] = useState('Sign in');
+  const [notifications, setNotifications] = useState<Notification[]>([]); // Ensure it's initialized as an empty array
+  const [unreadCount, setUnreadCount] = useState(0); // State for unread notifications count
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false); // State for notification menu visibility
 
   useEffect(() => {
     if (sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token')) {
       setLoggedin(true);
-      setSigntext(loggedin ? 'Log out' : 'Sign in');
+      setSigntext('Log out');
     }
 
     const storedUser = sessionStorage.getItem('userData');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      setIsPremium(parsedUser.premium_status || false); // Check if the user is premium
+      setIsPremium(parsedUser.premium_status || false);
     }
 
     const handleScroll = () => {
@@ -31,10 +44,34 @@ const Navbar = () => {
     };
 
     window.addEventListener('scroll', handleScroll);
+
+    // Fetch notifications from API
+    const fetchNotifications = async () => {
+      try {
+        const response = await api.get<{ notifications: Notification[] }>('users/notifications/'); // Adjust the response type
+        console.log(response.data);
+        const notifications = response.data.notifications || []; // Fallback to an empty array if undefined
+        setNotifications(notifications);
+        const unread = notifications.filter((notification) => !notification.is_read).length;
+        setUnreadCount(unread);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    if (loggedin) {
+      fetchNotifications();
+    }
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [loggedin]);
+
+  const toggleNotificationMenu = () => {
+    console.log('Toggling notification menu'); // Debugging log
+    setIsNotificationOpen(!isNotificationOpen);
+  };
 
   const handleAvatarClick = () => {
     const storedUser = sessionStorage.getItem('userData');
@@ -127,7 +164,7 @@ const Navbar = () => {
               <LogIn className="mr-2 h-4 w-4" />
               {signtext}
             </button>
-            {!isPremium && ( // Conditionally render the Upgrade to Premium button
+            {!isPremium && (
               <Link
                 to="/premium"
                 onClick={(e) => {
@@ -156,6 +193,42 @@ const Navbar = () => {
             >
               Book Appointment
             </Link>
+            {loggedin && (
+              <div className="relative">
+                <button
+                  onClick={toggleNotificationMenu}
+                  className="relative h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors duration-200 focus:outline-none"
+                >
+                  <Bell className="h-6 w-6 text-blue-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                {isNotificationOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                    style={{ zIndex: 9999 }} // Ensure it's above other elements
+                  >
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold text-gray-700">Notifications</h3>
+                      <ul className="mt-2 space-y-2">
+                        {notifications.length > 0 ? (
+                          notifications.map((notification) => (
+                            <li key={notification.id} className="text-sm text-gray-600">
+                              {notification.message}
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-sm text-gray-500">No notifications</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="relative">
               <button
                 onClick={handleAvatarClick}
