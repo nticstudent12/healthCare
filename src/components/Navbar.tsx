@@ -71,6 +71,7 @@ const Navbar = () => {
   const toggleNotificationMenu = () => {
     console.log('Toggling notification menu'); // Debugging log
     setIsNotificationOpen(!isNotificationOpen);
+    navigate('/NotificationPage'); // Navigate to the notifications page
   };
 
   const handleAvatarClick = () => {
