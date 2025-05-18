@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashbordPage';
 import AdminDashboard from './pages/AdminDashboard';
 import SignUpPage from './pages/SignUpPage';
 import NotificationPage from './pages/NotificationPage';
+import ReschedulePage from './pages/ReschedulePage';
 function App() {
   const location = useLocation();
 
@@ -36,7 +37,8 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/NotificationPage" element={<NotificationPage/>} />
         <Route path="/signup" element={<SignUpPage />} />
-       
+       <Route path="/reschedule" element={<ReschedulePage />} />
+
         <Route path="/dashboard" element={
       
             <DashboardPage />

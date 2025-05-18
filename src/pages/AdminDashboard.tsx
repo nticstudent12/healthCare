@@ -87,10 +87,20 @@ interface Doctor {
     email : string;
     external_id : string;
 }
+interface Ticket {
+  id: number;
+  subject: string;
+  description: string;
+  reported_by: string;
+  created_at: string;
+  status: 'open' | 'closed' | 'pending' | string;
+  response?: string; // Add response field
+}
 
+// Add this state near other state declarations
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'|'scaner'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'|'scaner' | 'tickets'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
@@ -100,6 +110,7 @@ const AdminDashboard = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]); 
   const [doctors, setDoctors] = useState<Doctor[]>([]); // State for doctors
   const [dropdownVisible, setDropdownVisible] = useState<number | null>(null); // State for dropdown visibility
+  const [responses, setResponses] = useState<{ [key: number]: string }>({});
 
  // State for medical history
 
@@ -197,41 +208,42 @@ const SyncDatabase = async () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   AI Interpretation
                 </th>
-               
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Record Date
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {medicalHistory.map((medicalHistory) => (
-                <tr key={medicalHistory.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {users.find((user) => user.id === medicalHistory.user)?.username || 'Unknown'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <a
-                      href={medicalHistory.scan}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      View Scan
-                    </a>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {typeof medicalHistory.ai_interpretation === 'string'
-                      ? medicalHistory.ai_interpretation
-                      : `${medicalHistory.ai_interpretation.diagnosis} (${medicalHistory.ai_interpretation.confidence.toFixed(
-                          2
-                        )}%)`}
-                  </td>
-   
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(medicalHistory.record_date).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {medicalHistory
+                .slice() // Create a shallow copy to avoid mutating the original array
+                .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime()) // Sort by record_date (descending)
+                .map((record) => (
+                  <tr key={record.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {users.find((user) => user.id === record.user)?.username || 'Unknown'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <a
+                        href={record.scan}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        View Scan
+                      </a>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {typeof record.ai_interpretation === 'string'
+                        ? record.ai_interpretation
+                        : record.ai_interpretation && record.ai_interpretation.diagnosis && record.ai_interpretation.confidence
+                        ? `${record.ai_interpretation.diagnosis} (${record.ai_interpretation.confidence.toFixed(2)}%)`
+                        : 'No interpretation available'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(record.record_date).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -302,7 +314,8 @@ const SyncDatabase = async () => {
                       {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(appointment.appointment_date).toLocaleString()}
+                      {new Date(appointment.appointment_date).toLocaleString()
+                      }
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
@@ -465,7 +478,7 @@ const SyncDatabase = async () => {
           <div className="flex items-center">
             <FileText className="h-8 w-8 text-amber-500" />
             <div className="ml-4">
-              <p className="text-sm text-gray-500">Pending Reports</p>
+              <p className="text-sm text-gray-500">Pending Tickets</p>
               <p className="text-2xl font-semibold text-gray-900">2</p>
             </div>
           </div>
@@ -835,10 +848,9 @@ const SyncDatabase = async () => {
     onClick={async () => {
       if (window.confirm(`Are you sure you want to revoke premium access for ${selectedUser.username}?`)) {
         try {
-          // Send PATCH request to update the premium status
-          await api.patch(
-            `/admin/users/${selectedUser.id}/revoke/`,
-            { premium_status: false }, // Payload to update premum status
+          // Send DELETE request to revoke the premium status
+          await api.delete(
+            `/admin/premium/${selectedUser.id}/revoke/`,
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -1214,6 +1226,150 @@ const SyncDatabase = async () => {
     </div>
   );
 
+  const [tickets, setTickets] = useState<Ticket[]>([]); // State for tickets
+
+  const renderTickets = () => (
+  <div className="space-y-6">
+    <div className="bg-white rounded-xl shadow-sm">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">Support Tickets</h3>
+          <div className="flex space-x-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search tickets..."
+                className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {tickets.map((ticket) => (
+            <div key={ticket.id} className="border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      ticket.status === 'open' 
+                        ? 'bg-red-100 text-red-800'
+                        : ticket.status === 'closed'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {ticket.status}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {new Date(ticket.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-2">{ticket.subject}</h4>
+                  <p className="text-gray-600 mb-4">{ticket.description}</p>
+                  
+                  {ticket.response && (
+                    <div className="bg-blue-50 rounded-lg p-4 mt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shield className="h-5 w-5 text-blue-600" />
+                        <span className="font-medium text-blue-800">Admin Response:</span>
+                      </div>
+                      <p className="text-blue-700">{ticket.response}</p>
+                    </div>
+                  )}
+
+                  {ticket.status === 'open' && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <textarea
+                        value={responses[ticket.id] || ''}
+                        onChange={(e) => setResponses({
+                          ...responses,
+                          [ticket.id]: e.target.value
+                        })}
+                        placeholder="Type your response here..."
+                        className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={3}
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!responses[ticket.id]?.trim()) {
+                            alert('Please write a response before submitting');
+                            return;
+                          }
+                          
+                          try {
+                            const response = await api.patch(
+                              `/admin/ticket/${ticket.id}/`,
+                              {
+                                response: responses[ticket.id],
+                                status: 'closed'
+                              },
+                              {
+                                headers: {
+                                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                                },
+                              }
+                            );
+
+                            setTickets(prev => prev.map(t => 
+                              t.id === ticket.id ? response.data : t
+                            ));
+                            setResponses(prev => ({ ...prev, [ticket.id]: '' }));
+                            
+                          } catch (error) {
+                            console.error('Error submitting response:', error);
+                            alert('Failed to submit response');
+                          }
+                        }}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                      >
+                        <Mail className="h-5 w-5" />
+                        Send Response
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+  // Fetch tickets from the backend
+  useEffect(() => {
+  const fetchTickets = async () => {
+    try {
+      const response = await api.get('/admin/ticket/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      // Sort tickets by created_at descending
+      const sortedTickets = response.data.sort((a: Ticket, b: Ticket) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setTickets(sortedTickets);
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    }
+  };
+
+  if (activeTab === 'tickets') {
+    fetchTickets();
+  }
+}, [activeTab]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -1299,9 +1455,9 @@ const SyncDatabase = async () => {
                   }`}
                 >
                   <ScanBarcodeIcon className="h-5 w-5" />
-                  <span>scaner</span>
+                  <span>Scanner</span>
                 </button>
-                <button
+                {/*<button
                   onClick={() => setActiveTab('reports')}
                   className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
                     activeTab === 'reports'
@@ -1311,7 +1467,7 @@ const SyncDatabase = async () => {
                 >
                   <FileText className="h-5 w-5" />
                   <span>Reports</span>
-                </button>
+                </button>*/}
                 
                 <button
                   onClick={() => setActiveTab('ai-models')}
@@ -1336,6 +1492,17 @@ const SyncDatabase = async () => {
                   <Gift className="h-5 w-5" />
                   <span>Coupons</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab('tickets')}
+                  className={`w-full flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg ${
+                    activeTab === 'tickets'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <FileText className="h-5 w-5" />
+                  <span>Tickets</span>
+                </button>
               </nav>
             </div>
           </div>
@@ -1346,12 +1513,13 @@ const SyncDatabase = async () => {
             {activeTab === 'doctors' && renderDoctors()}
             {activeTab === 'users' && renderUsers()}
             {activeTab === 'user-details' && renderUserDetails()}
-            {activeTab === 'reports' && renderReports()}
+            {/* {activeTab === 'reports' && renderReports()} */}
             {activeTab === 'ai-models' && renderAIModels()}
             {activeTab === 'coupons' && renderCoupons()}
             {activeTab === 'appointments' && renderAppointments()}
             {activeTab === 'medical-history' && renderMedicalHistory()}
             {activeTab === 'scaner' && renderScan()}
+            {activeTab === 'tickets' && renderTickets()}
         
           </div>
         </div>

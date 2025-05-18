@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -22,25 +22,18 @@ const timeSlots = [
   '16:00', '16:30'
 ];
 
-const BookingPage = () => {
+const ReschedulePage = () => {
   const [date, setDate] = useState<Value>(new Date());
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [bookingComplete, setBookingComplete] = useState(false);
-  const [bookingReference, setBookingReference] = useState('');
+  const [rescheduleComplete, setRescheduleComplete] = useState(false);
+  const [rescheduleReference, setRescheduleReference] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reservedTimes, setReservedTimes] = useState<{ [date: string]: Set<string> }>({});
   const navigate = useNavigate();
-
-
-  useEffect(() => {
-    fetchReservedTimes(setReservedTimes);
-  }, []);
 
   const handleDateChange = (value: Value) => {
     setDate(value);
     setSelectedTimeSlot(null);
-    fetchReservedTimes(setReservedTimes);
   };
 
   const handleTimeSlotSelect = (timeSlot: string) => {
@@ -57,20 +50,30 @@ const BookingPage = () => {
       const selectedDate = date instanceof Date ? date : new Date(date[0] || new Date());
       const [hours, minutes] = selectedTimeSlot.split(':').map(Number);
 
-      selectedDate.setHours(hours, minutes, 0, 0); // set local time
-      const appointment_date = selectedDate.toISOString(); // backend gets correct UTC
-      console.log("Sending appointment_date:", appointment_date);
+      selectedDate.setHours(hours, minutes, 0, 0);
 
-      const response = await api.post('users/appointments/create/', {
+      const appointment_date = selectedDate.toISOString();
+      console.log("Sending appointment_date:", appointment_date);
+      const appointments = JSON.parse(sessionStorage.getItem('appointments') || '[]');
+      const confirmedAppointment = appointments.find((appt: any) => appt.status === 'pending');
+      const appointmentId = confirmedAppointment?.id;
+      if (!appointmentId) {
+        setError('No pending appointment found to reschedule.');
+        setIsLoading(false);
+        return;
+      }
+      // PATCH instead of POST, and to a reschedule endpoint
+      const response = await api.patch(`users/appointments/${appointmentId}/`, {
         appointment_date,
       });
-      setBookingReference(response.data.id || `APP-${Date.now()}`);
-      setBookingComplete(true);
+      console.log("Response from API:", response.data);
+      setRescheduleReference(response.data.id || `APP-${Date.now()}`);
+      setRescheduleComplete(true);
     } catch (err) {
-      console.error('Booking failed:', err);
-      const errorMessage = (err as any)?.response?.data?.error || "Failed to book appointment. Please try again.";
+      console.error('Rescheduling failed:', err);
+      const errorMessage = (err as any)?.response?.data?.error || "Failed to reschedule appointment. Please try again.";
       setError(errorMessage);
-  
+
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const axiosError = err as { response?: { status?: number } };
         if (axiosError.response?.status === 401) {
@@ -80,7 +83,6 @@ const BookingPage = () => {
     } finally {
       setIsLoading(false);
     }
-    
   };
 
   const formatDate = (date: Date) => {
@@ -92,7 +94,7 @@ const BookingPage = () => {
     });
   };
 
-  if (bookingComplete) {
+  if (rescheduleComplete) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -105,8 +107,8 @@ const BookingPage = () => {
                   <Check className="h-10 w-10 text-blue-600" />
                 </div>
               </div>
-              <h1 className="text-3xl font-bold text-center">Appointment Confirmed!</h1>
-              <p className="text-center text-blue-100 mt-2">Your appointment has been successfully scheduled</p>
+              <h1 className="text-3xl font-bold text-center">Appointment Rescheduled!</h1>
+              <p className="text-center text-blue-100 mt-2">Your appointment has been successfully rescheduled</p>
             </div>
             
             <div className="p-6 md:p-8">
@@ -115,7 +117,7 @@ const BookingPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Reference Number</p>
-                    <p className="text-lg font-medium text-gray-900">{bookingReference}</p>
+                    <p className="text-lg font-medium text-gray-900">{rescheduleReference}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Date & Time</p>
@@ -136,7 +138,7 @@ const BookingPage = () => {
                   <div>
                     <h3 className="text-sm font-medium text-blue-800">Important Information</h3>
                     <p className="mt-1 text-sm text-blue-700">
-                      Please arrive 15 minutes before your appointment time. If you need to cancel or reschedule, 
+                      Please arrive 15 minutes before your appointment time. If you need to cancel or reschedule again, 
                       please do so at least 24 hours in advance.
                     </p>
                   </div>
@@ -167,10 +169,10 @@ const BookingPage = () => {
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12" data-aos="fade-up">
           <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-            Book Your Appointment
+            Reschedule Your Appointment
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500">
-            Choose your preferred date and time.
+            Choose your new preferred date and time.
           </p>
         </div>
         
@@ -194,7 +196,7 @@ const BookingPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Select Date</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Select New Date</h3>
                   <div className="calendar-container">
                     <Calendar 
                       onChange={handleDateChange} 
@@ -206,36 +208,25 @@ const BookingPage = () => {
                 </div>
                 
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Select Time</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Select New Time</h3>
                   {date ? (
                     <div className="grid grid-cols-2 gap-3">
-                      {timeSlots.map((timeSlot) => {
-                        let isReserved = false;
-                        if (date) {
-                          const d = date instanceof Date ? date : new Date(date[0] || new Date());
-                          const dateStr = d.toISOString().slice(0, 10);
-                          isReserved = reservedTimes[dateStr]?.has(timeSlot);
-                        }
-                        return (
-                          <div
-                            key={timeSlot}
-                            onClick={() => !isReserved && handleTimeSlotSelect(timeSlot)}
-                            className={`px-4 py-3 border rounded-md cursor-pointer text-center transition-all duration-200 ${
-                              selectedTimeSlot === timeSlot
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : isReserved
-                                  ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
-                                  : 'border-gray-300 hover:border-blue-300'
-                            }`}
-                            style={isReserved ? { pointerEvents: 'none', opacity: 0.6 } : {}}
-                          >
-                            <div className="flex items-center justify-center">
-                              <Clock className={`h-4 w-4 mr-2 ${selectedTimeSlot === timeSlot ? 'text-white' : isReserved ? 'text-gray-300' : 'text-gray-400'}`} />
-                              <span>{timeSlot}</span>
-                            </div>
+                      {timeSlots.map((timeSlot) => (
+                        <div
+                          key={timeSlot}
+                          onClick={() => handleTimeSlotSelect(timeSlot)}
+                          className={`px-4 py-3 border rounded-md cursor-pointer text-center transition-all duration-200 ${
+                            selectedTimeSlot === timeSlot
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-gray-300 hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-center">
+                            <Clock className={`h-4 w-4 mr-2 ${selectedTimeSlot === timeSlot ? 'text-white' : 'text-gray-400'}`} />
+                            <span>{timeSlot}</span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-48 border border-dashed border-gray-300 rounded-md">
@@ -258,11 +249,11 @@ const BookingPage = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Booking...
+                      Rescheduling...
                     </>
                   ) : (
                     <>
-                      Confirm Booking
+                      Confirm Reschedule
                       <Check className="ml-2 h-5 w-5" />
                     </>
                   )}
@@ -278,27 +269,4 @@ const BookingPage = () => {
   );
 };
 
-const fetchReservedTimes = async (setReservedTimes: React.Dispatch<React.SetStateAction<{ [date: string]: Set<string> }>>) => {
-  try {
-    const res = await api.get('users/appointments/reserved/');
-    const map: { [date: string]: Set<string> } = {};
-    res.data.reserved_dates.forEach((iso: string) => {
-      const d = new Date(iso);
-      // Use local date and time
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`; // local date
-      const timeStr = `${hours}:${minutes}`;     // local time
-      if (!map[dateStr]) map[dateStr] = new Set();
-      map[dateStr].add(timeStr);
-    });
-    setReservedTimes(map);
-  } catch (e) {
-    setReservedTimes({});
-  }
-};
-
-export default BookingPage;
+export default ReschedulePage;

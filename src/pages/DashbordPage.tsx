@@ -62,7 +62,8 @@ const DashboardPage = () => {
   const [newPassword, setNewPassword] = useState('');
   
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support' | 'scaner' | 'medical-history'>('overview');
-
+  const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
@@ -160,6 +161,7 @@ const DashboardPage = () => {
       try {
        
         const response = await api.get('/users/appointments/');
+        sessionStorage.setItem('appointments', JSON.stringify(response.data));
         setAppointments(response.data);
         console.log('Appointments data:', response.data);
        
@@ -259,6 +261,21 @@ const toggleSmsNotifications = () => {
   console.log('SMS notifications toggled:', !smsNotifications);
 };
 
+const handleTicketSubmit = async () => {
+  const ticketData = {
+    subject,
+    description,
+  };
+  try {
+    console.log('Submitting ticket:', ticketData);
+    const response = await api.post('users/ticket/create/', ticketData);
+    console.log('Ticket submitted successfully:', response.data);
+    alert('Ticket submitted successfully!');
+  } catch (err) {
+    console.error('Error submitting ticket:', err);
+    alert('Failed to submit ticket. Please try again.');
+  }
+}
   const handlePasswordChange = async () => {
     const passwordData = {
       new_password: newPassword,
@@ -357,9 +374,16 @@ const toggleSmsNotifications = () => {
       <div className="bg-white p-6 rounded-xl shadow-sm mt-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Appointments</h3>
         <div className="space-y-4">
-          {appointments
-            .filter((appointment) => appointment.status === 'completed')
-            .map((completedAppointment) => (
+          {(() => {
+            const confirmedAppointments = appointments.filter(
+              (appointment) => appointment.status === 'confirmed'
+            );
+            if (confirmedAppointments.length === 0) {
+              return (
+                <p className="text-gray-500 text-sm">No Upcoming Appointments</p>
+              );
+            }
+            return confirmedAppointments.map((completedAppointment) => (
               <div key={completedAppointment.id} className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="bg-blue-100 p-3 rounded-lg">
@@ -382,13 +406,14 @@ const toggleSmsNotifications = () => {
                   </div>
                 </div>
                 <Link
-                  to="/book-appointment"
+                  to="/reschedule"
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
                 >
                   Reschedule
                 </Link>
               </div>
-            ))}
+            ));
+          })()}
         </div>
       </div>
 
@@ -424,6 +449,21 @@ const toggleSmsNotifications = () => {
     </div>
   );
 
+  const handleCancelAppointment = async (appointmentId: number) => {
+    try {
+      await api.delete(`/users/appointments/${appointmentId}/`);
+      setAppointments(prev =>
+        prev.map(app =>
+          app.id === appointmentId ? { ...app, status: 'cancelled' } : app
+        )
+      );
+      alert('Appointment cancelled successfully.');
+    } catch (error) {
+      alert('Failed to cancel appointment.');
+      console.error('Cancel error:', error);
+    }
+  };
+
   const renderAppointments = () => (
     <div className="bg-white rounded-xl shadow-sm">
       <div className="p-6">
@@ -437,47 +477,62 @@ const toggleSmsNotifications = () => {
           </Link>
         </div>
         <div className="space-y-4">
-          {appointments.map(appointment => (
-            <div key={appointment.id} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Clock className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-
-                    {/* here this section is to make the date and time of the appointment in the right format */}
-                    <div>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+          {[...appointments]
+            .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
+            .map(appointment => (
+              <div key={appointment.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <Clock className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div className="ml-4">
+                      {/* here this section is to make the date and time of the appointment in the right format */}
+                      <div>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-                    {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                  </span>
-                  {appointment.status === 'pending' && (
-                    <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                      Cancel
-                    </button>
-                  )}
+                  <div className="flex items-center space-x-4">
+                    {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+                      <div>
+                        {appointment.status === 'pending' && (
+                          <Link
+                            to={`/reschedule`}
+                            className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-white bg-blue-600 rounded-md text-sm font-medium hover:bg-blue-700 hover:border-blue-700 transition-colors mr-2"
+                          >
+                            Reschedule
+                          </Link>
+                        )}
+                        <button
+                          className="inline-flex items-center px-3 py-1.5 border border-red-600 text-white bg-red-600 rounded-md text-sm font-medium hover:bg-red-700 hover:border-red-700 transition-colors"
+                          onClick={() => handleCancelAppointment(appointment.id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </div>
     </div>
@@ -508,33 +563,36 @@ const toggleSmsNotifications = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {medicalHistory.map((record) => (
-                  <tr key={record.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <a
-                        href={record.scan}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        View Scan
-                      </a>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {typeof record.ai_interpretation === 'string'
-                        ? record.ai_interpretation
-                        : `${record.ai_interpretation.diagnosis} (${record.ai_interpretation.confidence.toFixed(
-                            2
-                          )}%)`}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.appointment ? `Appointment ID: ${record.appointment}` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(record.record_date).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
+                {medicalHistory
+                  .slice() // Create a shallow copy to avoid mutating the original array
+                  .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime()) // Sort by record_date (descending)
+                  .map((record) => (
+                    <tr key={record.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <a
+                          href={record.scan}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          View Scan
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {typeof record.ai_interpretation === 'string'
+                          ? record.ai_interpretation
+                          : record.ai_interpretation && record.ai_interpretation.diagnosis && record.ai_interpretation.confidence
+                          ? `${record.ai_interpretation.diagnosis} (${record.ai_interpretation.confidence.toFixed(2)}%)`
+                          : 'No interpretation available'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {record.appointment ? `Appointment ID: ${record.appointment}` : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(record.record_date).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -691,6 +749,10 @@ const toggleSmsNotifications = () => {
               type="text"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="What can we help you with?"
+              value={subject}
+              onChange={(e) => {setSubject(e.target.value)
+                console.log("subject:", subject)
+              }}
             />
           </div>
           <div>
@@ -699,11 +761,16 @@ const toggleSmsNotifications = () => {
               rows={4}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Describe your issue or question..."
+              value={description}
+              onChange={(e) => {setDescription(e.target.value)
+                console.log("description:", description)
+              }}
             />
           </div>
           <div>
             <button
-              type="submit"
+              onClick={handleTicketSubmit}
+              type="button"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
             >
               Send Message

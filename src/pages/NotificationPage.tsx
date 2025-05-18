@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import api from '../utils/api/api'; // Adjust the import path as necessary
+import { Bell, Info, CheckCircle } from 'lucide-react'; // Add icons
 
 interface Notification {
   id: number;
@@ -31,12 +32,41 @@ const NotificationPage: React.FC = () => {
     fetchNotifications();
   }, []);
 
+  function formatMessageWithDate(message: string) {
+    // Match ISO date with optional timezone
+    const isoDateRegex = /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\+\d{2}:\d{2}|Z)?/;
+    const match = message.match(isoDateRegex);
+    if (match) {
+      // Convert "2025-05-22 09:00:00+00:00" to "2025-05-22T09:00:00+00:00"
+      const isoString = match[0].replace(' ', 'T');
+      const dateObj = new Date(isoString);
+      const formatted = dateObj.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+      return message.replace(match[0], formatted);
+    }
+    return message;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
       <Navbar />
-      <div className="h-16"> </div>
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Notifications</h1>
+      {/* Decorative background */}
+      <div className="absolute inset-0 pointer-events-none opacity-10 select-none" aria-hidden>
+        <Bell className="w-64 h-64 text-blue-200 mx-auto mt-24" />
+      </div>
+      <div className="h-16"></div>
+      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 relative z-10">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <Bell className="w-7 h-7 text-blue-500" />
+          Notifications
+        </h1>
         {loading ? (
           <p className="text-gray-500">Loading...</p>
         ) : error ? (
@@ -47,21 +77,45 @@ const NotificationPage: React.FC = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 rounded-lg shadow-sm ${
-                    notification.is_read ? 'bg-gray-100' : 'bg-blue-50'
+                  className={`p-5 rounded-xl border flex items-start gap-4 shadow-sm ${
+                    notification.is_read ? 'bg-gray-100 border-gray-200' : 'bg-blue-50 border-blue-200'
                   }`}
                 >
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {notification.notification_type || 'General'}
-                  </h2>
-                  <p className="text-sm text-gray-600">{notification.message}</p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(notification.created_at).toLocaleString()}
-                  </p>
+                  <div className="pt-1">
+                    {notification.notification_type === 'info' ? (
+                      <Info className="w-6 h-6 text-blue-400" />
+                    ) : notification.notification_type === 'success' ? (
+                      <CheckCircle className="w-6 h-6 text-green-400" />
+                    ) : (
+                      <Bell className="w-6 h-6 text-blue-400" />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900 mb-1">
+                      {notification.notification_type.charAt(0).toUpperCase() + notification.notification_type.slice(1)}
+                    </h2>
+                    <p className="text-sm text-gray-700 mb-2">
+                      {formatMessageWithDate(notification.message)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(notification.created_at).toLocaleString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </p>
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">No notifications available.</p>
+              <div className="flex flex-col items-center justify-center py-16">
+                <Bell className="w-16 h-16 text-blue-200 mb-4" />
+                <p className="text-lg text-gray-400 font-medium">No notifications available.</p>
+              </div>
             )}
           </div>
         )}
