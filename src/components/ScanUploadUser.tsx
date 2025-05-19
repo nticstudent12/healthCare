@@ -14,6 +14,8 @@ const ScanUploaduser = () => {
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]);
   const [selectedHistoryId, setSelectedHistoryId] = useState('');
   const [inputMethod, setInputMethod] = useState<'upload' | 'history'>('upload'); // New state for input method
+  const [loadingHistory, setLoadingHistory] = useState(true); // New state for loading
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state for submission loader
 
   interface AIModel {
     id: number;
@@ -43,10 +45,13 @@ const ScanUploaduser = () => {
 
     const fetchMedicalHistory = async () => {
       try {
+        setLoadingHistory(true); // Start loading
         const response = await api.get('users/history/');
         setMedicalHistory(response.data);
       } catch (error) {
         console.error('Error fetching medical history:', error);
+      } finally {
+        setLoadingHistory(false); // Stop loading
       }
     };
     fetchMedicalHistory();
@@ -85,6 +90,7 @@ const ScanUploaduser = () => {
       return;
     }
 
+    setIsSubmitting(true); // Show submission loader
     setUploadStatus('uploading');
     const formData = new FormData();
     if (inputMethod === 'upload') {
@@ -104,10 +110,12 @@ const ScanUploaduser = () => {
       console.log('Scan processed successfully:', response.data);
       setUploadStatus('success');
       alert('Scan processed successfully.');
-    } catch (error) {
-      console.error('Error processing scan:', error);
+    } catch (error: any) {
+      console.error('Error processing scan:', error?.response?.data?.error);
       setUploadStatus('error');
-      alert('Failed to process the scan. Please try again.');
+      alert(`Failed to process the scan: ${error?.response?.data?.error}`);
+    } finally {
+      setIsSubmitting(false); // Hide submission loader
     }
   };
 
@@ -211,22 +219,29 @@ const ScanUploaduser = () => {
             <label htmlFor="history-select" className="block text-sm font-medium text-gray-700 mb-2">
               Select Medical History Record
             </label>
-            <select
-              id="history-select"
-              name="history-select"
-              className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedHistoryId}
-              onChange={(e) => setSelectedHistoryId(e.target.value)}
-            >
-              <option value="" disabled>
-                Select a record
-              </option>
-              {medicalHistory.map((record) => (
-                <option key={record.id} value={record.id}>
-                  {`Record ID: ${record.id} - Date: ${new Date(record.record_date).toLocaleDateString()}`}
+            {loadingHistory ? (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                <span className="ml-2 text-sm text-gray-600">Loading medical history...</span>
+              </div>
+            ) : (
+              <select
+                id="history-select"
+                name="history-select"
+                className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedHistoryId}
+                onChange={(e) => setSelectedHistoryId(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select a record
                 </option>
-              ))}
-            </select>
+                {medicalHistory.map((record) => (
+                  <option key={record.id} value={record.id}>
+                    {`Record ID: ${record.id} - Date: ${new Date(record.record_date).toLocaleDateString()}`}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         )}
 
@@ -258,9 +273,17 @@ const ScanUploaduser = () => {
           <button
             type="button"
             onClick={SendScan}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            disabled={isSubmitting}
+            className={`inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Submit for AI Analysis
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Submit for AI Analysis'
+            )}
           </button>
         </div>
       </div>

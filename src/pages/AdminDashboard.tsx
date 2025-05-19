@@ -22,6 +22,9 @@ import {
   Edit,
   
   ScanBarcodeIcon,
+  Info,
+  CheckCircle,
+  Bell,
   
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
@@ -74,7 +77,13 @@ interface AIModel {
   status: string;
   parameters: Record<string, unknown>;
 }
-
+interface Notification {
+  id: number;
+  notification_type: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+}
 interface Doctor {
     first_name : string;
     last_name : string;
@@ -100,19 +109,47 @@ interface Ticket {
 // Add this state near other state declarations
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details'| 'appointments' |'medical-history'|'scaner' | 'tickets'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'doctors' | 'users' | 'reports' | 'ai-models' | 'coupons' | 'user-details' | 'appointments' | 'medical-history' | 'scaner' | 'tickets'>('overview');
+  const [notifications, setNotifications] = useState<Notification[]>([]); // State for notifications
+  const [loadingNotifications, setLoadingNotifications] = useState(true); // Loading state for notifications
+  const [errorNotifications, setErrorNotifications] = useState<string | null>(null); // Error state for notifications
+  const [responseTime, setResponseTime] = useState(238); // Initial response time in milliseconds
+  const [serverLoad, setServerLoad] = useState(45); // Initial server load in percentage
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]); // State to store users
   const [totalUsers, setTotalUsers] = useState(0); // State for total users
   const [coupons, setCoupons] = useState<Coupon[]>([]); // State to store coupons
   const [aiModels, setAIModels] = useState<AIModel[]>([]); // State for AI models
+  const [pendingTicketsCount, setPendingTicketsCount] = useState(0); // State for pending tickets count
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // State for selected user
-  const [appointments, setAppointments] = useState<Appointment[]>([]); 
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]); // State for doctors
+  const [tickets, setTickets] = useState<Ticket[]>([]); // State for tickets
   const [dropdownVisible, setDropdownVisible] = useState<number | null>(null); // State for dropdown visibility
   const [responses, setResponses] = useState<{ [key: number]: string }>({});
 
  // State for medical history
+
+useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get('users/notifications/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      setNotifications(response.data);
+      setErrorNotifications(null);
+    } catch (err) {
+      setErrorNotifications('Failed to fetch notifications.');
+      console.error(err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  fetchNotifications();
+}, [activeTab]);
 
  useEffect(() => {
   const fetchDoctors = async () => {
@@ -148,7 +185,7 @@ const SyncDatabase = async () => {
   }
   
 }
-
+  
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -168,6 +205,28 @@ const SyncDatabase = async () => {
       fetchAppointments();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const response = await api.get('/admin/ticket/', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setTickets(response.data);
+        setPendingTicketsCount(response.data.filter((ticket: Ticket) => ticket.status === 'open').length); // Update pending tickets count
+        console.log(response.data) // Update tickets state
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+      }
+    };
+
+    if (activeTab === 'overview' || activeTab === 'tickets') {
+      fetchTickets();
+    }
+  }, [activeTab]);
+
 
 
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryRecord[]>([]); 
@@ -307,89 +366,90 @@ const SyncDatabase = async () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {appointments.map((appointment) => (
-                  <tr key={appointment.id}>
-                    
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(appointment.appointment_date).toLocaleString()
-                      }
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          appointment.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : appointment.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : appointment.status === 'confirmed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {appointment.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="relative">
-                        <div className="relative group">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="text-blue-600 hover:text-blue-900"
-                            onClick={() =>
-                              setDropdownVisible(
-                                dropdownVisible === appointment.id ? null : appointment.id
-                              )
-                            }
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          {dropdownVisible === appointment.id && (
-                            <select
-                              className="bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm text-gray-700"
-                              value={appointment.status}
-                              onChange={async (e) => {
-                                const newStatus = e.target.value;
-                                try {
-                                  await api.patch(`/admin/appointments/${appointment.id}/`, {
-                                    status: newStatus,
-                                  });
-                                  alert(`Status updated to ${newStatus}`);
-                                  setAppointments((prevAppointments) =>
-                                    prevAppointments.map((appt) =>
-                                      appt.id === appointment.id
-                                        ? {
-                                            ...appt,
-                                            status: newStatus as
-                                              | 'completed'
-                                              | 'pending'
-                                              | 'confirmed'
-                                              | 'finished',
-                                          }
-                                        : appt
-                                    )
-                                  );
-                                  setDropdownVisible(null); // Close the dropdown
-                                } catch (error) {
-                                  console.error('Error updating status:', error);
-                                  alert('Failed to update status. Please try again.');
+                {appointments
+                  .slice()
+                  .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
+                  .map((appointment) => (
+                    <tr key={appointment.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {users.find((user) => user.id === appointment.user)?.username || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(appointment.appointment_date).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            appointment.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : appointment.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : appointment.status === 'confirmed'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {appointment.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="relative">
+                          <div className="relative group">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                className="text-blue-600 hover:text-blue-900"
+                                onClick={() =>
+                                  setDropdownVisible(
+                                    dropdownVisible === appointment.id ? null : appointment.id
+                                  )
                                 }
-                              }}
-                            >
-                              <option value="completed">Completed</option>
-                              <option value="pending">Pending</option>
-                              <option value="confirmed">Confirmed</option>
-                              <option value="finished">Finished</option>
-                            </select>
-                          )}
+                              >
+                                <Edit className="h-5 w-5" />
+                              </button>
+                              {dropdownVisible === appointment.id && (
+                                <select
+                                  className="bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm text-gray-700"
+                                  value={appointment.status}
+                                  onChange={async (e) => {
+                                    const newStatus = e.target.value;
+                                    try {
+                                      await api.patch(`/admin/appointments/${appointment.id}/`, {
+                                        status: newStatus,
+                                      });
+                                      alert(`Status updated to ${newStatus}`);
+                                      setAppointments((prevAppointments) =>
+                                        prevAppointments.map((appt) =>
+                                          appt.id === appointment.id
+                                            ? {
+                                                ...appt,
+                                                status: newStatus as
+                                                  | 'completed'
+                                                  | 'pending'
+                                                  | 'confirmed'
+                                                  | 'finished',
+                                              }
+                                            : appt
+                                        )
+                                      );
+                                      setDropdownVisible(null); // Close the dropdown
+                                    } catch (error) {
+                                      console.error('Error updating status:', error);
+                                      alert('Failed to update status. Please try again.');
+                                    }
+                                  }}
+                                >
+                                  <option value="completed">Completed</option>
+                                  <option value="pending">Pending</option>
+                                  <option value="confirmed">Confirmed</option>
+                                  <option value="finished">Finished</option>
+                                </select>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -433,6 +493,7 @@ const SyncDatabase = async () => {
           },
         });
         setAIModels(response.data); // Update AI models state
+
       } catch (error) {
         console.error('Error fetching AI models:', error);
       }
@@ -446,7 +507,7 @@ const SyncDatabase = async () => {
       fetchCoupons();
     }
 
-    if (activeTab === 'ai-models') {
+    if (activeTab === 'ai-models' || activeTab === 'overview') {
       fetchAIModels();
     }
   }, [activeTab]);
@@ -479,7 +540,7 @@ const SyncDatabase = async () => {
             <FileText className="h-8 w-8 text-amber-500" />
             <div className="ml-4">
               <p className="text-sm text-gray-500">Pending Tickets</p>
-              <p className="text-2xl font-semibold text-gray-900">2</p>
+              <p className="text-2xl font-semibold text-gray-900">{pendingTicketsCount}</p>
             </div>
           </div>
         </div>
@@ -501,19 +562,29 @@ const SyncDatabase = async () => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-500">Server Load</span>
-              <span className="text-sm font-medium text-green-600">Normal</span>
+              <span className={`text-sm font-medium ${serverLoad < 50 ? 'text-green-600' : 'text-yellow-600'}`}>
+                {serverLoad}%
+              </span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full">
-              <div className="h-2 bg-green-500 rounded-full" style={{ width: '45%' }}></div>
+              <div
+                className={`h-2 rounded-full ${serverLoad < 50 ? 'bg-green-500' : 'bg-yellow-500'}`}
+                style={{ width: `${serverLoad}%` }}
+              ></div>
             </div>
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-500">Response Time</span>
-              <span className="text-sm font-medium text-green-600">238ms</span>
+              <span className={`text-sm font-medium ${responseTime < 270 ? 'text-green-600' : 'text-red-600'}`}>
+                {responseTime}ms
+              </span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full">
-              <div className="h-2 bg-green-500 rounded-full" style={{ width: '65%' }}></div>
+              <div
+                className={`h-2 rounded-full ${responseTime < 270 ? 'bg-green-500' : 'bg-red-500'}`}
+                style={{ width: `${(responseTime - 200) / 100 * 100}%` }}
+              ></div>
             </div>
           </div>
           <div>
@@ -532,39 +603,58 @@ const SyncDatabase = async () => {
       <div className="bg-white p-6 rounded-xl shadow-sm">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
         <div className="space-y-4">
-          {[
-            {
-              type: 'doctor_approval',
-              message: 'New doctor registration pending approval',
-              time: '5 minutes ago',
-              icon: User,
-              iconColor: 'text-blue-500'
-            },
-            {
-              type: 'ai_update',
-              message: 'AI Model v2.3.0 deployment completed',
-              time: '1 hour ago',
-              icon: Brain,
-              iconColor: 'text-purple-500'
-            },
-            {
-              type: 'report',
-              message: 'Technical report #458 requires review',
-              time: '2 hours ago',
-              icon: FileText,
-              iconColor: 'text-amber-500'
-            }
-          ].map((activity, index) => (
-            <div key={index} className="flex items-start">
-              <div className={`flex-shrink-0 ${activity.iconColor}`}>
-                <activity.icon className="h-5 w-5" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-gray-900">{activity.message}</p>
-                <p className="text-xs text-gray-500">{activity.time}</p>
-              </div>
-            </div>
-          ))}
+          {loadingNotifications ? (
+            <p className="text-gray-500">Loading recent activity...</p>
+          ) : errorNotifications ? (
+            <p className="text-red-500">{errorNotifications}</p>
+          ) : notifications.length > 0 ? (
+            notifications
+              .slice()
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .slice(0, 3)
+              .map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`flex items-start p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow ${
+                    notification.is_read ? 'bg-gray-100' : 'bg-blue-50'
+                  }`}
+                >
+                  <div className="flex-shrink-0">
+                    <div
+                      className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                        notification.notification_type === 'info'
+                          ? 'bg-blue-100 text-blue-600'
+                          : notification.notification_type === 'success'
+                          ? 'bg-green-100 text-green-600'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {notification.notification_type === 'info' ? (
+                        <Info className="h-5 w-5" />
+                      ) : notification.notification_type === 'success' ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : (
+                        <Bell className="h-5 w-5" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(notification.created_at).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))
+          ) : (
+            <p className="text-sm text-gray-500">No recent activity available.</p>
+          )}
         </div>
       </div>
     </div>
@@ -902,91 +992,7 @@ const SyncDatabase = async () => {
       </div>
     </div>
   );
-  const renderReports = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Technical Reports</h3>
-            <div className="flex space-x-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search reports..."
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
-              <select className="border border-gray-300 rounded-md px-4 py-2">
-                <option>All Priorities</option>
-                <option>High</option>
-                <option>Medium</option>
-                <option>Low</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              {
-                id: 'TR-001',
-                title: 'System Performance Analysis',
-                priority: 'High',
-                status: 'Pending Review',
-                date: '2024-03-15',
-                author: 'Dr. Sarah Johnson'
-              },
-              {
-                id: 'TR-002',
-                title: 'AI Model Accuracy Report',
-                priority: 'Medium',
-                status: 'Approved',
-                date: '2024-03-14',
-                author: 'Dr. Michael Chen'
-              }
-            ].map((report, index) => (
-              <div key={index} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-500">#{report.id}</span>
-                      <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        report.priority === 'High'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {report.priority}
-                      </span>
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-900 mt-1">{report.title}</h4>
-                    <div className="mt-1">
-                      <span className="text-sm text-gray-500">By {report.author}</span>
-                      <span className="mx-2">•</span>
-                      <span className="text-sm text-gray-500">{report.date}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      report.status === 'Approved'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {report.status}
-                    </span>
-                    <button className="text-blue-600 hover:text-blue-700">
-                      <Download className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  
   const renderAIModels = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -1225,9 +1231,6 @@ const SyncDatabase = async () => {
       </div>
     </div>
   );
-
-  const [tickets, setTickets] = useState<Ticket[]>([]); // State for tickets
-
   const renderTickets = () => (
   <div className="space-y-6">
     <div className="bg-white rounded-xl shadow-sm">
@@ -1370,10 +1373,31 @@ const SyncDatabase = async () => {
   }
 }, [activeTab]);
 
+  // Update response time and server load dynamically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Update response time (range: 200ms to 300ms)
+      setResponseTime((prev) => {
+        const change = Math.random() * 10 - 5; // Random change between -5 and +5
+        const newValue = Math.max(200, Math.min(300, prev + change)); // Clamp between 200 and 300
+        return Math.round(newValue);
+      });
+
+      // Update server load (range: 30% to 70%)
+      setServerLoad((prev) => {
+        const change = Math.random() * 5 - 2.5; // Random change between -2.5 and +2.5
+        const newValue = Math.max(30, Math.min(70, prev + change)); // Clamp between 30 and 70
+        return Math.round(newValue);
+      });
+    }, 700); // Update every 1000 milliseconds (1 second)
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className='h-8'></div>
+      <div className="h-8"></div>
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}

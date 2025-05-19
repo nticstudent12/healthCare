@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle,
   ScanBarcodeIcon,
+  Shield,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -35,6 +36,16 @@ type Notification = {
   type: 'info' | 'success' | 'warning';
   read: boolean;
 };
+
+interface Ticket {
+  id: number;
+  subject: string;
+  description: string;
+  reported_by: string;
+  created_at: string;
+  status: 'open' | 'closed' | 'pending' | string;
+  response?: string; // Add response field
+}
 
 type UserData = {
   id: string;
@@ -64,6 +75,9 @@ const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'appointments' | 'records' | 'settings' | 'support' | 'scaner' | 'medical-history'>('overview');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [userTickets, setUserTickets] = useState<Ticket[]>([]);
+  const [responses, setResponses] = useState<{ [key: number]: string }>({});
+
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
@@ -121,6 +135,40 @@ const DashboardPage = () => {
     }
   };
 
+  useEffect(() => {
+      const fetchUserTickets = async () => {
+        try {
+          const response = await api.get('admin/ticket/', {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            },
+          });
+          console.log('User tickets:', response.data);
+          setUserTickets(response.data);
+        } catch (error) {
+          console.error('Error fetching user tickets:', error);
+        }
+      };
+
+      fetchUserTickets();
+    }, []);
+
+  useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get('/users/notifications/', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      setNotifications(response.data); // Update notifications state with fetched data
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  fetchNotifications();
+}, [activeTab]);
   useEffect(() => {
     const fetchMedicalHistory = async () => {
       try {
@@ -240,6 +288,27 @@ const DashboardPage = () => {
     ));
   };
 
+// Function to format message with date
+const formatMessageWithDate = (message: string) => {
+  const isoDateRegex = /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\+\d{2}:\d{2}|Z)?/;
+  const match = message.match(isoDateRegex);
+  if (match) {
+    const isoString = match[0].replace(' ', 'T');
+    const dateObj = new Date(isoString);
+    const formatted = dateObj.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return message.replace(match[0], formatted);
+  }
+  return message;
+};
+
 // Effect to handle initial loading from userData
 useEffect(() => {
   if (userData?.settings) {
@@ -268,9 +337,16 @@ const handleTicketSubmit = async () => {
   };
   try {
     console.log('Submitting ticket:', ticketData);
-    const response = await api.post('users/ticket/create/', ticketData);
+    const response = await api.post('users/ticket/create/', ticketData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      },
+    });
     console.log('Ticket submitted successfully:', response.data);
     alert('Ticket submitted successfully!');
+    setUserTickets((prev) => [response.data, ...prev]); // Add the new ticket to the list
+    setSubject(''); // Clear the subject field
+    setDescription(''); // Clear the description field
   } catch (err) {
     console.error('Error submitting ticket:', err);
     alert('Failed to submit ticket. Please try again.');
@@ -418,34 +494,41 @@ const handleTicketSubmit = async () => {
       </div>
 
       {/* Recent Notifications */}
-      <div className="bg-white p-6 rounded-xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Notifications</h3>
-        <div className="space-y-4">
-          {notifications.map(notification => (
-            <div
-              key={notification.id}
-              className={`flex items-start p-4 rounded-lg ${
-                notification.read ? 'bg-gray-50' : 'bg-blue-50'
-              }`}
-              onClick={() => markNotificationAsRead(notification.id)}
-            >
-              <div className="flex-shrink-0">
-                {getNotificationIcon(notification.type)}
+      <div className="bg-blue-50 p-6 rounded-xl shadow-sm">
+  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Notifications</h3>
+  <div className="space-y-4">
+    {notifications.length > 0 ? (
+      notifications
+        .slice()
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()) // Sort by time (most recent first)
+        .slice(0, 3) // Display only the 3 most recent notifications
+        .map((notification) => (
+          <div
+            key={notification.id}
+            className={`flex items-start p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow ${
+              notification.read ? 'bg-gray-50' : 'bg-blue-100'
+            }`}
+            onClick={() => markNotificationAsRead(notification.id)}
+          >
+            <div className="flex-shrink-0">
+              <div className="h-10 w-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600">
+                <Bell className="h-6 w-6" />
               </div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                <p className="mt-1 text-sm text-gray-500">{notification.message}</p>
-                <p className="mt-1 text-xs text-gray-400">{notification.time}</p>
-              </div>
-              {!notification.read && (
-                <div className="ml-3">
-                  <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
-                </div>
-              )}
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="ml-4">
+              <p className="text-base font-medium text-gray-900">{notification.title}</p>
+              <p className="mt-1 text-md text-gray-900">
+                {formatMessageWithDate(notification.message)}
+              </p>
+              
+            </div>
+          </div>
+        ))
+    ) : (
+      <p className="text-sm text-gray-500">No recent notifications available.</p>
+    )}
+  </div>
+</div>
     </div>
   );
 
@@ -738,72 +821,131 @@ const handleTicketSubmit = async () => {
   
 
 
-  const renderSupport = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Support</h3>
-        <form className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Subject</label>
-            <input
-              type="text"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="What can we help you with?"
-              value={subject}
-              onChange={(e) => {setSubject(e.target.value)
-                console.log("subject:", subject)
-              }}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Message</label>
-            <textarea
-              rows={4}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Describe your issue or question..."
-              value={description}
-              onChange={(e) => {setDescription(e.target.value)
-                console.log("description:", description)
-              }}
-            />
-          </div>
-          <div>
-            <button
-              onClick={handleTicketSubmit}
-              type="button"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Send Message
-            </button>
-          </div>
-        </form>
-      </div>
+  const renderSupport = () => {
+    const handleTicketSubmit = async () => {
+      const ticketData = {
+        subject,
+        description,
+      };
+      try {
+        console.log('Submitting ticket:', ticketData);
+        const response = await api.post('users/ticket/create/', ticketData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        console.log('Ticket submitted successfully:', response.data);
+        alert('Ticket submitted successfully!');
+        setUserTickets((prev) => [response.data, ...prev]); // Add the new ticket to the list
+        setSubject(''); // Clear the subject field
+        setDescription(''); // Clear the description field
+      } catch (err) {
+        console.error('Error submitting ticket:', err);
+        alert('Failed to submit ticket. Please try again.');
+      }
+    };
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">FAQs</h3>
-        <div className="space-y-4">
-          <div>
-            <button className="flex justify-between items-center w-full text-left">
-              <span className="text-sm font-medium text-gray-900">How do I reschedule an appointment?</span>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </button>
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Submit a Support Ticket</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleTicketSubmit();
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Subject</label>
+                <input
+                  type="text"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Enter the subject of your ticket"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your issue or question"
+                  rows={4}
+                  required
+                ></textarea>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Submit Ticket
+                </button>
+              </div>
+            </form>
           </div>
-          <div>
-            <button className="flex justify-between items-center w-full text-left">
-              <span className="text-sm font-medium text-gray-900">How can I view my test results?</span>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </button>
-          </div>
-          <div>
-            <button className="flex justify-between items-center w-full text-left">
-              <span className="text-sm font-medium text-gray-900">What insurance plans do you accept?</span>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">Your Support Tickets</h3>
+            <div className="space-y-4 mt-6">
+              {userTickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            ticket.status === 'open'
+                              ? 'bg-red-100 text-red-800'
+                              : ticket.status === 'closed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {ticket.status}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(ticket.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      <h4 className="text-xl font-semibold text-gray-900 mb-2">{ticket.subject}</h4>
+                      <p className="text-gray-600 mb-4">{ticket.description}</p>
+
+                      {ticket.response && (
+                        <div className="bg-blue-50 rounded-lg p-4 mt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Shield className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium text-blue-800">Admin Response:</span>
+                          </div>
+                          <p className="text-blue-700">{ticket.response}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   function renderScan() {
     return (

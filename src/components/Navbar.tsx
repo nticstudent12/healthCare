@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Menu, X, LogIn, Crown, User, Bell } from 'lucide-react';
-import api from '../utils/api/api'; // Adjust the import path as necessary
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Heart, Menu, X, LogIn, Crown, User, Bell, Shield } from 'lucide-react';
+import api from '../utils/api/api';
 
 interface Notification {
   id: number;
@@ -14,14 +14,16 @@ interface Notification {
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [loggedin, setLoggedin] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [signtext, setSigntext] = useState('Sign in');
-  const [notifications, setNotifications] = useState<Notification[]>([]); // Ensure it's initialized as an empty array
-  const [unreadCount, setUnreadCount] = useState(0); // State for unread notifications count
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false); // State for notification menu visibility
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem('refresh_token') || localStorage.getItem('refresh_token')) {
@@ -33,6 +35,7 @@ const Navbar = () => {
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setIsPremium(parsedUser.premium_status || false);
+      setIsAdmin(parsedUser.role === 'admin');
     }
 
     const handleScroll = () => {
@@ -45,12 +48,10 @@ const Navbar = () => {
 
     window.addEventListener('scroll', handleScroll);
 
-    // Fetch notifications from API
     const fetchNotifications = async () => {
       try {
-        const response = await api.get<{ notifications: Notification[] }>('users/notifications/'); // Adjust the response type
-        console.log(response.data);
-        const notifications = response.data.notifications || []; // Fallback to an empty array if undefined
+        const response = await api.get<{ notifications: Notification[] }>('users/notifications/');
+        const notifications = response.data.notifications || [];
         setNotifications(notifications);
         const unread = notifications.filter((notification) => !notification.is_read).length;
         setUnreadCount(unread);
@@ -69,9 +70,8 @@ const Navbar = () => {
   }, [loggedin]);
 
   const toggleNotificationMenu = () => {
-    console.log('Toggling notification menu'); // Debugging log
     setIsNotificationOpen(!isNotificationOpen);
-    navigate('/NotificationPage'); // Navigate to the notifications page
+    navigate('/NotificationPage');
   };
 
   const handleAvatarClick = () => {
@@ -130,32 +130,34 @@ const Navbar = () => {
                 HealthTrust
               </Link>
             </div>
-            <div className="hidden md:ml-6 md:flex md:space-x-8">
-              <button
-                onClick={() => navigate('/')}
-                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 border-blue-500 transition-colors duration-200"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => scrollToSection('services')}
-                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
-              >
-                Services
-              </button>
-              <button
-                onClick={() => scrollToSection('wellness')}
-                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
-              >
-                About
-              </button>
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
-              >
-                Contact
-              </button>
-            </div>
+            {location.pathname === '/' && ( // Render only on the HomePage
+              <div className="hidden md:ml-6 md:flex md:space-x-8">
+                <button
+                  onClick={() => navigate('/')}
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 border-blue-500 transition-colors duration-200"
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => scrollToSection('services')}
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
+                >
+                  Services
+                </button>
+                <button
+                  onClick={() => scrollToSection('wellness')}
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
+                >
+                  About
+                </button>
+                <button
+                  onClick={() => scrollToSection('contact')}
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent transition-colors duration-200"
+                >
+                  Contact
+                </button>
+              </div>
+            )}
           </div>
           <div className="hidden md:flex items-center space-x-4">
             <button
@@ -165,7 +167,7 @@ const Navbar = () => {
               <LogIn className="mr-2 h-4 w-4" />
               {signtext}
             </button>
-            {!isPremium && (
+            {!isAdmin && !isPremium && ( // Hide for admin users
               <Link
                 to="/premium"
                 onClick={(e) => {
@@ -181,19 +183,21 @@ const Navbar = () => {
                 Upgrade to Premium
               </Link>
             )}
-            <Link
-              to="/book-appointment"
-              onClick={(e) => {
-                const storedUser = sessionStorage.getItem('userData');
-                if (!storedUser) {
-                  e.preventDefault();
-                  navigate('/login');
-                }
-              }}
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              Book Appointment
-            </Link>
+            {!isAdmin && ( // Hide for admin users
+              <Link
+                to="/book-appointment"
+                onClick={(e) => {
+                  const storedUser = sessionStorage.getItem('userData');
+                  if (!storedUser) {
+                    e.preventDefault();
+                    navigate('/login');
+                  }
+                }}
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              >
+                Book Appointment
+              </Link>
+            )}
             {loggedin && (
               <div className="relative">
                 <button
@@ -210,7 +214,7 @@ const Navbar = () => {
                 {isNotificationOpen && (
                   <div
                     className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
-                    style={{ zIndex: 9999 }} // Ensure it's above other elements
+                    style={{ zIndex: 9999 }}
                   >
                     <div className="p-4">
                       <h3 className="text-sm font-semibold text-gray-700">Notifications</h3>
@@ -235,7 +239,11 @@ const Navbar = () => {
                 onClick={handleAvatarClick}
                 className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors duration-200 focus:outline-none"
               >
-                <User className="h-6 w-6 text-blue-600" />
+                {isAdmin ? (
+                  <Shield className="h-6 w-6 text-blue-600" />
+                ) : (
+                  <User className="h-6 w-6 text-blue-600" />
+                )}
               </button>
             </div>
           </div>
@@ -250,7 +258,6 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-      {/* Mobile menu logic remains unchanged */}
     </nav>
   );
 };

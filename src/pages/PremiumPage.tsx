@@ -65,6 +65,12 @@ const PremiumPage = () => {
 
       if (response.data) {
         setSuccess(true);
+        const userData = sessionStorage.getItem('userData');
+        if (userData) {
+          const parsed = JSON.parse(userData);
+          parsed.premium_status = true;
+          sessionStorage.setItem('userData', JSON.stringify(parsed));
+        }
         console.log('Coupon redeemed successfully:', response.data);
       }
     } catch (err) {
